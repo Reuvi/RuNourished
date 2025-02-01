@@ -1,4 +1,3 @@
-// tailwind.config.js
 module.exports = {
   content: [
     "./src/**/*.{html,js,jsx,ts,tsx}",
@@ -11,6 +10,7 @@ module.exports = {
         paleYellow: "#F5E6CA",   // Pale yellow/cream
         deeperPurple: "#9370DB", // Deeper purple (for accents)
         mintAqua: "#A7E8D0",     // Mint/aqua blue
+        darkerPurple: "#4B0082", // New darker purple for navbar and accents
       },
     },
   },
