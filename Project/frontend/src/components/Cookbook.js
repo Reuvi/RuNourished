@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Heart, Clock, BookmarkCheck, ChefHat, Search } from 'lucide-react';
 
-const FavoritesPage = () => {
+const Cookbook = () => {
   const [activeTab, setActiveTab] = useState('favorites');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -62,7 +62,9 @@ const FavoritesPage = () => {
       </div>
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="text-lg font-semibold" style={{ color: '#4B0082' }}>{recipe.title}</h3>
+          <h3 className="text-lg font-semibold" style={{ color: '#4B0082' }}>
+            {recipe.title}
+          </h3>
           <div className="flex space-x-2">
             {recipe.isFavorite && (
               <Heart className="w-5 h-5 text-red-500 fill-current" />
@@ -72,7 +74,9 @@ const FavoritesPage = () => {
             )}
           </div>
         </div>
-        <p className="text-sm mb-3" style={{ color: '#4B0082' }}>{recipe.description}</p>
+        <p className="text-sm mb-3" style={{ color: '#4B0082' }}>
+          {recipe.description}
+        </p>
         <div className="flex items-center text-sm" style={{ color: '#4B0082' }}>
           <Clock className="w-4 h-4 mr-1" />
           <span>{recipe.cookTime}</span>
@@ -84,44 +88,56 @@ const FavoritesPage = () => {
   );
 
   return (
-    <div className="min-h-screen relative overflow-hidden" 
-         style={{
-           background: `radial-gradient(circle at 70% 20%, #9370DB 0%, transparent 25%),
-                       radial-gradient(circle at 30% 80%, #9370DB 0%, transparent 25%),
-                       linear-gradient(45deg, #A7E8D0, #ADD8E6, #B8B5E1, #F5E6CA)`
-         }}>
+    <div
+      className="h-full relative overflow-hidden"
+      style={{
+        background: `radial-gradient(circle at 70% 20%, #9370DB 0%, transparent 25%),
+                     radial-gradient(circle at 30% 80%, #9370DB 0%, transparent 25%),
+                     linear-gradient(45deg, #A7E8D0, #ADD8E6, #B8B5E1, #F5E6CA)`
+      }}
+    >
       {/* Floating orb decorative elements */}
-      <div className="absolute w-64 h-64 rounded-full blur-3xl opacity-60"
-           style={{
-             background: 'radial-gradient(circle, #F5E6CA, #ADD8E6)',
-             top: '20%',
-             left: '60%',
-             transform: 'translate(-50%, -50%)'
-           }}></div>
-      <div className="absolute w-32 h-32 rounded-full blur-2xl opacity-50"
-           style={{
-             background: 'radial-gradient(circle, #B8B5E1, #A7E8D0)',
-             top: '60%',
-             left: '30%',
-             transform: 'translate(-50%, -50%)'
-           }}></div>
+      <div
+        className="absolute w-64 h-64 rounded-full blur-3xl opacity-60"
+        style={{
+          background: 'radial-gradient(circle, #F5E6CA, #ADD8E6)',
+          top: '20%',
+          left: '60%',
+          transform: 'translate(-50%, -50%)'
+        }}
+      ></div>
+      <div
+        className="absolute w-32 h-32 rounded-full blur-2xl opacity-50"
+        style={{
+          background: 'radial-gradient(circle, #B8B5E1, #A7E8D0)',
+          top: '60%',
+          left: '30%',
+          transform: 'translate(-50%, -50%)'
+        }}
+      ></div>
 
-      <div className="relative container mx-auto px-4 py-8">
+      <div className="relative container mx-auto px-4 py-8 h-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2" style={{ color: '#4B0082' }}>My Cookbook</h1>
+          <h1 className="text-3xl font-bold mb-2" style={{ color: '#4B0082' }}>
+            My Cookbook
+          </h1>
           <p style={{ color: '#4B0082' }}>All your favorite recipes in one place</p>
         </div>
 
         {/* Search Bar */}
         <div className="max-w-md mx-auto mb-8 relative">
-          <Search className="absolute left-3 top-3" style={{ color: '#4B0082' }} size={20} />
+          <Search
+            className="absolute left-3 top-3"
+            style={{ color: '#4B0082' }}
+            size={20}
+          />
           <input
             type="text"
             placeholder="Search recipes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-white bg-opacity-70 border border-gray-200 rounded-lg focus:outline-none focus:ring-1"
-            style={{ color: '#4B0082', borderColor: '#4B0082', '::placeholder': { color: '#4B0082' } }}
+            style={{ color: '#4B0082', borderColor: '#4B0082' }}
           />
         </div>
 
@@ -173,4 +189,4 @@ const FavoritesPage = () => {
   );
 };
 
-export default FavoritesPage;
+export default Cookbook;

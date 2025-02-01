@@ -55,6 +55,9 @@ function Navbar() {
             <Link to="/home" className="text-white hover:text-paleYellow transition">
               Home
             </Link>
+            <Link to="/cookbook" className="text-white hover:text-paleYellow transition">
+              Cookbook
+            </Link>
             {/* Profile Dropdown */}
             <div className="relative">
               <button
@@ -68,6 +71,12 @@ function Navbar() {
               </button>
               {isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                  <button
+                    onClick={() => { setDropdownOpen(false); navigate("/profile"); }}
+                    className="block px-4 py-2 text-gray-800 hover:bg-gray-200 w-full text-left"
+                  >
+                    Profile
+                  </button>
                   <button
                     onClick={handleSignOut}
                     className="block px-4 py-2 text-gray-800 hover:bg-gray-200 w-full text-left"
