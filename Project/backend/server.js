@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
-const customMiddleware = require("./middleware/middleware.js");
+const {customMiddleware, authorization} = require("./middleware/middleware.js");
 const mongoose = require("mongoose");
 
 const app = express();
@@ -28,7 +28,7 @@ app.use(cors()); // Enables CORS
 // Routes
 app.use("/v1", customMiddleware, require("./routes"));
 app.use("/v1/users", require("./routes/users"));
-app.use("/v1/ai", require("./routes/ai"))
+app.use("/v1/ai", authorization, require("./routes/ai"))
 
 // Serve frontend build (after running `npm run build` in frontend)
 const path = require("path");
