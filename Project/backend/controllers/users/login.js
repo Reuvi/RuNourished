@@ -1,8 +1,17 @@
 const { login } = require("../../services/users/login");
 
-//Template login controller
+//login controller
 module.exports = async (req, res) => {
-    const message = await login()
-    res.json({ message: message });
+    
+    const {email, password} = req.body
+    
+    const response = await login(email, password)
+
+    if(response.success) {
+        res.status(201).json({ message: response.message, jwt: response.token, values: response.values });
+    }
+    else {
+        res.status(403).json({ error: response.message });
+    }
 };
   
