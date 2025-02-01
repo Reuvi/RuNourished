@@ -28,6 +28,7 @@ app.use(cors()); // Enables CORS
 // Routes
 app.use("/v1", customMiddleware, require("./routes"));
 app.use("/v1/users", require("./routes/users"));
+app.use("/v1/ai", require("./routes/ai"))
 
 // Serve frontend build (after running `npm run build` in frontend)
 const path = require("path");
