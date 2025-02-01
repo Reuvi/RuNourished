@@ -12,11 +12,12 @@ function Signup() {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      // Use the new registration route
+      // Call the registration endpoint with username, email, and password
       const response = await api.post('/v1/users/register', { username, email, password });
       console.log(response.data.message);
-      // If needed, you could display the success message or store data here.
-      navigate("/home");
+      
+      // After successful signup, redirect the user to the login page
+      navigate("/login");
     } catch (err) {
       console.error("Error signing up:", err.response?.data?.error || err.message);
       alert(err.response?.data?.error || "Signup failed. Please try again.");

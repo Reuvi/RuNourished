@@ -11,14 +11,18 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      // Adjust the endpoint and payload as needed.
+      // Call the login API endpoint with the email and password
       const response = await api.post('/v1/users/login', { email, password });
-      console.log(response);
-      // Store an auth token (or any indicator) in localStorage.
+      console.log(response.data.message);
+      
+      // Store the returned JWT token in localStorage (or cookies if you prefer)
       localStorage.setItem("authToken", response.data.token);
+      
+      // Navigate to the home page after a successful login
       navigate("/home");
     } catch (err) {
       console.error("Error logging in:", err);
+      alert(err.response?.data?.error || "Login failed. Please try again.");
     }
   };
 
