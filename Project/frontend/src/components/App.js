@@ -1,6 +1,6 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { Navbar, Login, Signup, Home } from "./";
+import { Navbar, Login, Signup, Home, Cookbook, Profile } from "./";
 
 // Helper function to get a cookie by name
 function getCookie(name) {
@@ -41,6 +41,36 @@ function App() {
               <Navbar />
               <main className="flex-1">
                 <Home />
+              </main>
+            </div>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Protected Cookbook route */}
+      <Route
+        path="/cookbook"
+        element={
+          <ProtectedRoute>
+            <div className="h-screen flex flex-col">
+              <Navbar />
+              <main className="flex-1">
+                <Cookbook />
+              </main>
+            </div>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Protected Profile route */}
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <div className="h-screen flex flex-col">
+              <Navbar />
+              <main className="flex-1">
+                <Profile />
               </main>
             </div>
           </ProtectedRoute>
