@@ -1,3 +1,4 @@
+// Navbar.js
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -20,7 +21,9 @@ function Navbar() {
     if (valuesCookie) {
       try {
         const values = JSON.parse(valuesCookie);
-        setUsername(values.username || '');
+
+        // Again, match your cookie’s key name:
+        setUsername(values.userName || '');
       } catch (err) {
         console.error("Failed to parse values cookie:", err);
       }
@@ -28,10 +31,10 @@ function Navbar() {
   }, []);
 
   const handleSignOut = () => {
-    // Delete the cookies by setting their expiration dates in the past
+    // Delete cookies by setting their expiration dates in the past
     document.cookie = "jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     document.cookie = "values=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    // Redirect to the login page
+    // Then redirect to the login page
     navigate("/login");
   };
 
@@ -64,6 +67,7 @@ function Navbar() {
                 onClick={() => setDropdownOpen(!isDropdownOpen)}
                 className="flex items-center text-white focus:outline-none"
               >
+                {/* If the userName doesn't exist, show "Profile" */}
                 <span>{username || "Profile"}</span>
                 <svg className="ml-1 h-4 w-4 fill-current" viewBox="0 0 20 20">
                   <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
@@ -72,7 +76,10 @@ function Navbar() {
               {isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
                   <button
-                    onClick={() => { setDropdownOpen(false); navigate("/profile"); }}
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      navigate("/profile");
+                    }}
                     className="block px-4 py-2 text-gray-800 hover:bg-gray-200 w-full text-left"
                   >
                     Profile

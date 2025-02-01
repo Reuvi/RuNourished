@@ -1,3 +1,4 @@
+// Profile.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -21,8 +22,11 @@ function Profile() {
     if (valuesCookie) {
       try {
         const values = JSON.parse(valuesCookie);
-        setUsername(values.username || '');
-        setEmail(values.email || '');
+
+        // IMPORTANT: match the key names in your cookie exactly:
+        // e.g. if your cookie has "userName" and "userEmail", use those:
+        setUsername(values.userName || '');
+        setEmail(values.userEmail || '');
       } catch (err) {
         console.error("Failed to parse values cookie:", err);
       }
@@ -31,7 +35,7 @@ function Profile() {
 
   const handleUpdate = (e) => {
     e.preventDefault();
-    // Update the profile info (e.g., call an API to update user data)
+    // TODO: Actually call your API or update the cookie again here
     alert("Profile updated!");
   };
 
