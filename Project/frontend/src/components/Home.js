@@ -17,7 +17,6 @@ function Home() {
   // Step 1: Nutritional Preferences
   // Step 2: Ingredients (with option to add as many as desired)
   const [step, setStep] = useState(1);
-  const [isDefault, setIsDefault] = useState(false);
   const [formData, setFormData] = useState({
     calories: "",
     fat: "",
@@ -69,20 +68,18 @@ function Home() {
     }
   };
 
-  // Set default values for nutrient facts only (using "max" values)
-  const handleSetDefault = (e) => {
+  // Fill ONLY empty fields with default values
+  const handleFillEmptyFields = (e) => {
     e.preventDefault();
-    setFormData({
-      ...formData,
-      calories: "1000",
-      fat: "50",
-      carbohydrates: "150",
-      protein: "100",
-      cholesterol: "300",
-      sodium: "1500",
-      fiber: "20"
-    });
-    setIsDefault(true);
+    const newFormData = { ...formData };
+    if (!newFormData.calories) newFormData.calories = "1000";
+    if (!newFormData.fat) newFormData.fat = "50";
+    if (!newFormData.carbohydrates) newFormData.carbohydrates = "150";
+    if (!newFormData.protein) newFormData.protein = "100";
+    if (!newFormData.cholesterol) newFormData.cholesterol = "300";
+    if (!newFormData.sodium) newFormData.sodium = "1500";
+    if (!newFormData.fiber) newFormData.fiber = "20";
+    setFormData(newFormData);
   };
 
   // For Step 2, split the ingredients array into two columns based on index.
@@ -116,8 +113,8 @@ function Home() {
                 {/* Calories Field */}
                 <div className="flex flex-col">
                   <label htmlFor="calories" className="mb-1 text-darkerPurple">
-                    <Flame className="inline mr-2 text-darkerPurple" size={20} />{" "}
-                    {isDefault ? "MAX Calories" : "Calories"}
+                    <Flame className="inline mr-2 text-darkerPurple" size={20} />
+                    Max Calories
                   </label>
                   <div className="relative">
                     <input
@@ -134,8 +131,8 @@ function Home() {
                 {/* Fat Field */}
                 <div className="flex flex-col">
                   <label htmlFor="fat" className="mb-1 text-darkerPurple">
-                    <Droplet className="inline mr-2 text-darkerPurple" size={20} />{" "}
-                    {isDefault ? "MAX Fat (g)" : "Fat (g)"}
+                    <Droplet className="inline mr-2 text-darkerPurple" size={20} />
+                    Max Fat (g)
                   </label>
                   <div className="relative">
                     <input
@@ -151,9 +148,12 @@ function Home() {
                 </div>
                 {/* Carbohydrates Field */}
                 <div className="flex flex-col">
-                  <label htmlFor="carbohydrates" className="mb-1 text-darkerPurple">
-                    <Layers className="inline mr-2 text-darkerPurple" size={20} />{" "}
-                    {isDefault ? "MAX Carbohydrates (g)" : "Carbohydrates (g)"}
+                  <label
+                    htmlFor="carbohydrates"
+                    className="mb-1 text-darkerPurple"
+                  >
+                    <Layers className="inline mr-2 text-darkerPurple" size={20} />
+                    Max Carbohydrates (g)
                   </label>
                   <div className="relative">
                     <input
@@ -170,8 +170,8 @@ function Home() {
                 {/* Protein Field */}
                 <div className="flex flex-col">
                   <label htmlFor="protein" className="mb-1 text-darkerPurple">
-                    <Zap className="inline mr-2 text-darkerPurple" size={20} />{" "}
-                    {isDefault ? "MAX Protein (g)" : "Protein (g)"}
+                    <Zap className="inline mr-2 text-darkerPurple" size={20} />
+                    Max Protein (g)
                   </label>
                   <div className="relative">
                     <input
@@ -188,8 +188,8 @@ function Home() {
                 {/* Cholesterol Field */}
                 <div className="flex flex-col">
                   <label htmlFor="cholesterol" className="mb-1 text-darkerPurple">
-                    <Heart className="inline mr-2 text-darkerPurple" size={20} />{" "}
-                    {isDefault ? "MAX Cholesterol (mg)" : "Cholesterol (mg)"}
+                    <Heart className="inline mr-2 text-darkerPurple" size={20} />
+                    Max Cholesterol (mg)
                   </label>
                   <div className="relative">
                     <input
@@ -206,8 +206,8 @@ function Home() {
                 {/* Sodium Field */}
                 <div className="flex flex-col">
                   <label htmlFor="sodium" className="mb-1 text-darkerPurple">
-                    <Percent className="inline mr-2 text-darkerPurple" size={20} />{" "}
-                    {isDefault ? "MAX Sodium (mg)" : "Sodium (mg)"}
+                    <Percent className="inline mr-2 text-darkerPurple" size={20} />
+                    Max Sodium (mg)
                   </label>
                   <div className="relative">
                     <input
@@ -224,8 +224,8 @@ function Home() {
                 {/* Fiber Field */}
                 <div className="flex flex-col">
                   <label htmlFor="fiber" className="mb-1 text-darkerPurple">
-                    <Leaf className="inline mr-2 text-darkerPurple" size={20} />{" "}
-                    {isDefault ? "MAX Fiber (g)" : "Fiber (g)"}
+                    <Leaf className="inline mr-2 text-darkerPurple" size={20} />
+                    Max Fiber (g)
                   </label>
                   <div className="relative">
                     <input
@@ -249,7 +249,8 @@ function Home() {
                   {leftIndices.map((i) => (
                     <div key={i} className="flex flex-col">
                       <label htmlFor={`ingredient-${i}`} className="mb-1 text-darkerPurple">
-                        <Tag className="inline mr-2 text-darkerPurple" size={20} /> Ingredient {i + 1}:
+                        <Tag className="inline mr-2 text-darkerPurple" size={20} /> 
+                        Ingredient {i + 1}:
                       </label>
                       <div className="relative">
                         <input
@@ -279,7 +280,8 @@ function Home() {
                   {rightIndices.map((i) => (
                     <div key={i} className="flex flex-col">
                       <label htmlFor={`ingredient-${i}`} className="mb-1 text-darkerPurple">
-                        <Tag className="inline mr-2 text-darkerPurple" size={20} /> Ingredient {i + 1}:
+                        <Tag className="inline mr-2 text-darkerPurple" size={20} /> 
+                        Ingredient {i + 1}:
                       </label>
                       <div className="relative">
                         <input
@@ -310,11 +312,11 @@ function Home() {
             <div className="flex justify-between mt-6">
               {step === 1 ? (
                 <button
-                  onClick={handleSetDefault}
+                  onClick={handleFillEmptyFields}
                   type="button"
                   className="bg-gray-300 text-darkerPurple py-2 px-4 rounded hover:bg-gray-400 transition"
                 >
-                  Set to Default
+                  Fill Empty Fields With Default
                 </button>
               ) : (
                 <button
