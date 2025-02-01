@@ -6,19 +6,15 @@ import api from '../api/api';
 
 function Signup() {
   const navigate = useNavigate();
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
     try {
       // Adjust the endpoint and payload as needed.
-      const response = await api.post('/v1/users/signup', { email, password });
+      const response = await api.post('/v1/users/signup', { username, email, password });
       console.log(response);
       // Save the auth token (or similar) to localStorage.
       localStorage.setItem("authToken", response.data.token);
@@ -44,6 +40,17 @@ function Signup() {
             <div className="relative">
               <User className="absolute left-3 top-3 text-gray-500" size={20} />
               <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Username"
+                className="w-full pl-10 pr-4 py-2 bg-white bg-opacity-70 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800"
+                required
+              />
+            </div>
+            <div className="relative">
+              <User className="absolute left-3 top-3 text-gray-500" size={20} />
+              <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -59,17 +66,6 @@ function Signup() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
-                className="w-full pl-10 pr-4 py-2 bg-white bg-opacity-70 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800"
-                required
-              />
-            </div>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 text-gray-500" size={20} />
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm Password"
                 className="w-full pl-10 pr-4 py-2 bg-white bg-opacity-70 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800"
                 required
               />
