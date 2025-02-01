@@ -1,4 +1,4 @@
-const { regsiter } = require("../../services/users/register");
+const { register } = require("../../services/users/register");
 
 //Template login controller
 module.exports = async (req, res) => {
