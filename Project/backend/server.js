@@ -8,10 +8,13 @@ const mongoose = require("mongoose");
 const app = express();
 
 // Updated connection string using both DB_USER and DB_PASSWORD from .env
-const connectionString = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.uaufy.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+const connectionString = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.uaufy.mongodb.net/RUCart?retryWrites=true&w=majority&appName=Cluster0`;
 
 mongoose.connect(connectionString)
-  .then(() => console.log("Connected to MongoDB Atlas"))
+  .then(() => {
+    console.log("Database Connected!")
+    //Test Area for DB Operations
+  })
   .catch((err) => {
     console.error("Error connecting to MongoDB Atlas:", err);
     process.exit(1);

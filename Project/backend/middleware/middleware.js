@@ -3,4 +3,8 @@ const customMiddleware = (req, res, next) => {
     next();
   };
 
+const authorization = (req, res, next) => {
+  console.log("authorization to be added");
+}
+
 module.exports = customMiddleware;
