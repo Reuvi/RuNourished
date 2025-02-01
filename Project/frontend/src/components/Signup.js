@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Lock } from 'lucide-react';
 import api from '../api/api';
@@ -8,6 +8,14 @@ function Signup() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState(''); // State to store error messages
+
+  // If the user is already logged in, redirect to home.
+  useEffect(() => {
+    if (document.cookie.includes("jwt=")) {
+      navigate("/home");
+    }
+  }, [navigate]);
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -16,11 +24,15 @@ function Signup() {
       const response = await api.post('/v1/users/register', { username, email, password });
       console.log(response.data.message);
       
+      // Clear any previous error message
+      setErrorMessage('');
+      
       // After successful signup, redirect the user to the login page
       navigate("/login");
     } catch (err) {
       console.error("Error signing up:", err.response?.data?.error || err.message);
-      alert(err.response?.data?.error || "Signup failed. Please try again.");
+      // Set the error message to be displayed in the error banner
+      setErrorMessage(err.response?.data?.error || "Signup failed. Please try again.");
     }
   };
 
@@ -36,6 +48,14 @@ function Signup() {
             <h1 className="text-3xl font-bold text-darkerPurple">Create Account</h1>
             <p className="text-deeperPurple mt-2">Sign up to get started</p>
           </div>
+
+          {/* Error Banner */}
+          {errorMessage && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              {errorMessage}
+            </div>
+          )}
+
           <form onSubmit={handleSignup} className="space-y-6">
             <div className="relative">
               <User className="absolute left-3 top-3 text-darkerPurple" size={20} />
