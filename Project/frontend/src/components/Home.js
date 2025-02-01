@@ -1,4 +1,3 @@
-// src/Home.js
 import React, { useState } from "react";
 import api from "../api/api";
 import {
@@ -69,6 +68,15 @@ function Home() {
     }
   };
 
+  // For Step 2, split the ingredients array into two columns based on index.
+  const nextIndex = formData.ingredients.length;
+  const leftIndices = formData.ingredients
+    .map((_, i) => i)
+    .filter((i) => i % 2 === 0);
+  const rightIndices = formData.ingredients
+    .map((_, i) => i)
+    .filter((i) => i % 2 === 1);
+
   return (
     <div className="h-full relative overflow-hidden bg-custom">
       {/* Floating decorative orbs */}
@@ -76,139 +84,165 @@ function Home() {
       <div className="orb-small"></div>
 
       <div className="relative flex items-center justify-center h-full px-4">
-        <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-4xl my-10">
-          <h2 className="text-3xl font-bold mb-6 text-gray-800 text-center">
+        {/* Transparent form container with strong blur (similar to Login) */}
+        <div className="bg-white bg-opacity-20 backdrop-blur-lg p-8 rounded-lg shadow-xl w-full max-w-4xl my-10">
+          <h2 className="text-3xl font-bold mb-6 text-darkerPurple text-center">
             Customize Your Recipe Preferences
           </h2>
-          <p className="text-center mb-4 text-gray-800">Step {step} of 2</p>
+          <p className="text-center mb-4 text-darkerPurple">Step {step} of 2</p>
           <form
             onSubmit={step === 2 ? handleSubmit : handleNext}
             className="grid grid-cols-1 gap-6"
           >
             {step === 1 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
                 {/* Calories Field */}
                 <div className="flex flex-col">
-                  <label htmlFor="calories" className="mb-1 text-gray-800">
-                    <Flame className="inline mr-2" size={20} /> Calories
+                  <label htmlFor="calories" className="mb-1 text-darkerPurple">
+                    <Flame className="inline mr-2 text-darkerPurple" size={20} />{" "}
+                    Calories
                   </label>
                   <div className="relative">
-                    <Flame className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-800" size={20} />
+                    <Flame
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-darkerPurple"
+                      size={20}
+                    />
                     <input
                       type="number"
                       id="calories"
                       name="calories"
                       value={formData.calories}
                       onChange={handleChange}
-                      className="p-3 pl-10 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-gray-800 focus:ring-2 focus:ring-gray-800 transition duration-200"
+                      className="w-full p-3 pl-10 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
                       required
                     />
                   </div>
                 </div>
                 {/* Fat Field */}
                 <div className="flex flex-col">
-                  <label htmlFor="fat" className="mb-1 text-gray-800">
-                    <Droplet className="inline mr-2" size={20} /> Fat (g)
+                  <label htmlFor="fat" className="mb-1 text-darkerPurple">
+                    <Droplet className="inline mr-2 text-darkerPurple" size={20} /> Fat
+                    (g)
                   </label>
                   <div className="relative">
-                    <Droplet className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-800" size={20} />
+                    <Droplet
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-darkerPurple"
+                      size={20}
+                    />
                     <input
                       type="number"
                       id="fat"
                       name="fat"
                       value={formData.fat}
                       onChange={handleChange}
-                      className="p-3 pl-10 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-gray-800 focus:ring-2 focus:ring-gray-800 transition duration-200"
+                      className="w-full p-3 pl-10 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
                       required
                     />
                   </div>
                 </div>
                 {/* Carbohydrates Field */}
                 <div className="flex flex-col">
-                  <label htmlFor="carbohydrates" className="mb-1 text-gray-800">
-                    <Layers className="inline mr-2" size={20} /> Carbohydrates (g)
+                  <label htmlFor="carbohydrates" className="mb-1 text-darkerPurple">
+                    <Layers className="inline mr-2 text-darkerPurple" size={20} /> Carbohydrates
+                    (g)
                   </label>
                   <div className="relative">
-                    <Layers className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-800" size={20} />
+                    <Layers
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-darkerPurple"
+                      size={20}
+                    />
                     <input
                       type="number"
                       id="carbohydrates"
                       name="carbohydrates"
                       value={formData.carbohydrates}
                       onChange={handleChange}
-                      className="p-3 pl-10 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-gray-800 focus:ring-2 focus:ring-gray-800 transition duration-200"
+                      className="w-full p-3 pl-10 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
                       required
                     />
                   </div>
                 </div>
                 {/* Protein Field */}
                 <div className="flex flex-col">
-                  <label htmlFor="protein" className="mb-1 text-gray-800">
-                    <Zap className="inline mr-2" size={20} /> Protein (g)
+                  <label htmlFor="protein" className="mb-1 text-darkerPurple">
+                    <Zap className="inline mr-2 text-darkerPurple" size={20} /> Protein (g)
                   </label>
                   <div className="relative">
-                    <Zap className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-800" size={20} />
+                    <Zap
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-darkerPurple"
+                      size={20}
+                    />
                     <input
                       type="number"
                       id="protein"
                       name="protein"
                       value={formData.protein}
                       onChange={handleChange}
-                      className="p-3 pl-10 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-gray-800 focus:ring-2 focus:ring-gray-800 transition duration-200"
+                      className="w-full p-3 pl-10 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
                       required
                     />
                   </div>
                 </div>
                 {/* Cholesterol Field */}
                 <div className="flex flex-col">
-                  <label htmlFor="cholesterol" className="mb-1 text-gray-800">
-                    <Heart className="inline mr-2" size={20} /> Cholesterol (mg)
+                  <label htmlFor="cholesterol" className="mb-1 text-darkerPurple">
+                    <Heart className="inline mr-2 text-darkerPurple" size={20} /> Cholesterol
+                    (mg)
                   </label>
                   <div className="relative">
-                    <Heart className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-800" size={20} />
+                    <Heart
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-darkerPurple"
+                      size={20}
+                    />
                     <input
                       type="number"
                       id="cholesterol"
                       name="cholesterol"
                       value={formData.cholesterol}
                       onChange={handleChange}
-                      className="p-3 pl-10 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-gray-800 focus:ring-2 focus:ring-gray-800 transition duration-200"
+                      className="w-full p-3 pl-10 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
                       required
                     />
                   </div>
                 </div>
                 {/* Sodium Field */}
                 <div className="flex flex-col">
-                  <label htmlFor="sodium" className="mb-1 text-gray-800">
-                    <Percent className="inline mr-2" size={20} /> Sodium (mg)
+                  <label htmlFor="sodium" className="mb-1 text-darkerPurple">
+                    <Percent className="inline mr-2 text-darkerPurple" size={20} /> Sodium (mg)
                   </label>
                   <div className="relative">
-                    <Percent className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-800" size={20} />
+                    <Percent
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-darkerPurple"
+                      size={20}
+                    />
                     <input
                       type="number"
                       id="sodium"
                       name="sodium"
                       value={formData.sodium}
                       onChange={handleChange}
-                      className="p-3 pl-10 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-gray-800 focus:ring-2 focus:ring-gray-800 transition duration-200"
+                      className="w-full p-3 pl-10 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
                       required
                     />
                   </div>
                 </div>
                 {/* Fiber Field */}
                 <div className="flex flex-col">
-                  <label htmlFor="fiber" className="mb-1 text-gray-800">
-                    <Leaf className="inline mr-2" size={20} /> Fiber (g)
+                  <label htmlFor="fiber" className="mb-1 text-darkerPurple">
+                    <Leaf className="inline mr-2 text-darkerPurple" size={20} /> Fiber (g)
                   </label>
                   <div className="relative">
-                    <Leaf className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-800" size={20} />
+                    <Leaf
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-darkerPurple"
+                      size={20}
+                    />
                     <input
                       type="number"
                       id="fiber"
                       name="fiber"
                       value={formData.fiber}
                       onChange={handleChange}
-                      className="p-3 pl-10 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-gray-800 focus:ring-2 focus:ring-gray-800 transition duration-200"
+                      className="w-full p-3 pl-10 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
                       required
                     />
                   </div>
@@ -217,32 +251,88 @@ function Home() {
             )}
 
             {step === 2 && (
-              <div className="flex flex-col gap-4">
-                {formData.ingredients.map((ingredient, index) => (
-                  <div key={index} className="flex flex-col">
-                    <label htmlFor={`ingredient-${index}`} className="mb-1 text-gray-800">
-                      <Tag className="inline mr-2" size={20} /> Ingredient {index + 1}:
-                    </label>
-                    <div className="relative">
-                      <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-800" size={20} />
-                      <input
-                        type="text"
-                        id={`ingredient-${index}`}
-                        name={`ingredient-${index}`}
-                        value={ingredient}
-                        onChange={(e) => handleIngredientChange(index, e)}
-                        className="p-3 pl-10 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:border-gray-800 focus:ring-2 focus:ring-gray-800 transition duration-200"
-                        required
-                      />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
+                {/* Left Column (even-index ingredients) */}
+                <div className="flex flex-col gap-4">
+                  {leftIndices.map((i) => (
+                    <div key={i} className="flex flex-col">
+                      <label
+                        htmlFor={`ingredient-${i}`}
+                        className="mb-1 text-darkerPurple"
+                      >
+                        <Tag
+                          className="inline mr-2 text-darkerPurple"
+                          size={20}
+                        />{" "}
+                        Ingredient {i + 1}:
+                      </label>
+                      <div className="relative">
+                        <Tag
+                          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-darkerPurple"
+                          size={20}
+                        />
+                        <input
+                          type="text"
+                          id={`ingredient-${i}`}
+                          name={`ingredient-${i}`}
+                          value={formData.ingredients[i]}
+                          onChange={(e) => handleIngredientChange(i, e)}
+                          className="w-full p-3 pl-10 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
+                          required
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
-                <button
-                  onClick={handleAddIngredient}
-                  className="flex items-center text-gray-800 hover:text-gray-600 transition"
-                >
-                  <PlusCircle size={24} className="mr-2" /> Add Ingredient
-                </button>
+                  ))}
+                  {nextIndex % 2 === 0 && (
+                    <button
+                      onClick={handleAddIngredient}
+                      className="flex items-center text-darkerPurple hover:text-darkerPurple/80 transition"
+                    >
+                      <PlusCircle size={24} className="mr-2" /> Add Ingredient
+                    </button>
+                  )}
+                </div>
+
+                {/* Right Column (odd-index ingredients) */}
+                <div className="flex flex-col gap-4">
+                  {rightIndices.map((i) => (
+                    <div key={i} className="flex flex-col">
+                      <label
+                        htmlFor={`ingredient-${i}`}
+                        className="mb-1 text-darkerPurple"
+                      >
+                        <Tag
+                          className="inline mr-2 text-darkerPurple"
+                          size={20}
+                        />{" "}
+                        Ingredient {i + 1}:
+                      </label>
+                      <div className="relative">
+                        <Tag
+                          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-darkerPurple"
+                          size={20}
+                        />
+                        <input
+                          type="text"
+                          id={`ingredient-${i}`}
+                          name={`ingredient-${i}`}
+                          value={formData.ingredients[i]}
+                          onChange={(e) => handleIngredientChange(i, e)}
+                          className="w-full p-3 pl-10 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
+                          required
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  {nextIndex % 2 === 1 && (
+                    <button
+                      onClick={handleAddIngredient}
+                      className="flex items-center text-darkerPurple hover:text-darkerPurple/80 transition"
+                    >
+                      <PlusCircle size={24} className="mr-2" /> Add Ingredient
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
@@ -251,7 +341,7 @@ function Home() {
               {step > 1 && (
                 <button
                   onClick={handlePrev}
-                  className="bg-gray-300 text-gray-800 py-2 px-4 rounded hover:bg-gray-400 transition"
+                  className="bg-darkerPurple/50 text-white py-2 px-4 rounded hover:bg-darkerPurple/40 transition"
                 >
                   Previous
                 </button>
@@ -260,7 +350,7 @@ function Home() {
                 {step < 2 && (
                   <button
                     type="submit"
-                    className="bg-gray-800 text-white py-2 px-4 rounded hover:bg-gray-700 transition"
+                    className="bg-darkerPurple text-white py-2 px-4 rounded hover:bg-darkerPurple/90 transition"
                   >
                     Next
                   </button>
@@ -268,7 +358,7 @@ function Home() {
                 {step === 2 && (
                   <button
                     type="submit"
-                    className="bg-gray-800 text-white py-2 px-4 rounded hover:bg-gray-700 transition"
+                    className="bg-darkerPurple text-white py-2 px-4 rounded hover:bg-darkerPurple/90 transition"
                   >
                     Submit
                   </button>
