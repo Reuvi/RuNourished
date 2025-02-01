@@ -3,14 +3,14 @@ const bcrypt = require("bcryptjs");
 const User = require("../../models/User");
 const mongoose = require("mongoose"); 
 
-const register = async (username, password, email, age) => {
+const register = async (username, password, email) => {
 
     response = {
         success: false,
         message: "Unregistered"
     };
 
-    if (!username || !email || !password || !age) {
+    if (!username || !email || !password) {
         response.message = "All fields are required.";
         return respose;
       }
@@ -46,7 +46,7 @@ const register = async (username, password, email, age) => {
         const hashedPassword = await bcrypt.hash(password, salt);
         
         // Create new user
-        const user = new User({ name: sanitizedUsername, email: sanitizedEmail, password: hashedPassword, age: age });
+        const user = new User({ name: sanitizedUsername, email: sanitizedEmail, password: hashedPassword });
         await user.save();
         response.message = "User succesfully created"
         response.success = true;
