@@ -11,7 +11,7 @@ function Navbar() {
           <div className="flex items-center h-full">
             <Link to="/home" className="flex items-center h-full">
               <img
-                src="/images/logo-removebg-preview.png"
+                src="/images/logo_dark_background.png"
                 alt="Logo"
                 className="h-full w-[200px] object-contain"
               />

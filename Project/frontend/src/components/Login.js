@@ -14,12 +14,10 @@ function Login() {
       // Call the login API endpoint with the email and password
       const response = await api.post('/v1/users/login', { email, password });
       console.log(response.data.message);
-      
+
       document.cookie = `jwt=${JSON.stringify(response.data.jwt)}; path=/; Secure; SameSite=Strict`;
       document.cookie = `values=${JSON.stringify(response.data.values)}; path=/; Secure; SameSite=Strict`;
 
-
-      
       // Navigate to the home page after a successful login
       navigate("/home");
     } catch (err) {
@@ -36,9 +34,13 @@ function Login() {
 
       <div className="relative flex items-center justify-center min-h-screen">
         <div className="bg-white bg-opacity-20 backdrop-blur-lg p-8 rounded-lg shadow-xl w-96">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-darkerPurple">Welcome Back</h1>
-            <p className="text-deeperPurple mt-2">Please sign in to continue</p>
+          {/* Logo with light background */}
+          <div className="flex justify-center mb-4">
+            <img
+              src="/images/logo_light_background.png"
+              alt="Logo"
+              className="h-16 object-contain"
+            />
           </div>
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="relative">
