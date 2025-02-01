@@ -1,27 +1,26 @@
-import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import {Login, Home} from "."
-import api from "../api/api";
-
+import React from "react";
+import { useLocation } from "react-router-dom";
+import Navbar from "./Navbar";
+import { Login, Home } from "."; // Assumes Login and Home components are exported from index.js
 
 function App() {
   const location = useLocation();
-  const navigate = useNavigate();
 
+  // Render the proper component based on the current route
   const renderComponent = () => {
     switch (location.pathname) {
       case "/login":
         return <Login />;
       case "/home":
-        return <Home />;
       default:
         return <Home />;
     }
   };
+
   return (
-    <div>
-      <h1>Default Header/Background</h1>
-      {renderComponent()}
+    <div className="min-h-screen bg-paleYellow">
+      <Navbar />
+      <div className="p-4">{renderComponent()}</div>
     </div>
   );
 }
