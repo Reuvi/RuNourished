@@ -15,8 +15,10 @@ function Login() {
       const response = await api.post('/v1/users/login', { email, password });
       console.log(response.data.message);
       
-      // Store the returned JWT token in localStorage (or cookies if you prefer)
-      localStorage.setItem("authToken", response.data.token);
+      document.cookie = `jwt=${JSON.stringify(response.data.jwt)}; path=/; Secure; SameSite=Strict`;
+      document.cookie = `values=${JSON.stringify(response.data.values)}; path=/; Secure; SameSite=Strict`;
+
+
       
       // Navigate to the home page after a successful login
       navigate("/home");
