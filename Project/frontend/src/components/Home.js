@@ -17,6 +17,7 @@ function Home() {
   // Step 1: Nutritional Preferences
   // Step 2: Ingredients (with option to add as many as desired)
   const [step, setStep] = useState(1);
+  const [isDefault, setIsDefault] = useState(false);
   const [formData, setFormData] = useState({
     calories: "",
     fat: "",
@@ -68,6 +69,22 @@ function Home() {
     }
   };
 
+  // Set default values for nutrient facts only (using "max" values)
+  const handleSetDefault = (e) => {
+    e.preventDefault();
+    setFormData({
+      ...formData,
+      calories: "1000",
+      fat: "50",
+      carbohydrates: "150",
+      protein: "100",
+      cholesterol: "300",
+      sodium: "1500",
+      fiber: "20"
+    });
+    setIsDefault(true);
+  };
+
   // For Step 2, split the ingredients array into two columns based on index.
   const nextIndex = formData.ingredients.length;
   const leftIndices = formData.ingredients
@@ -100,20 +117,16 @@ function Home() {
                 <div className="flex flex-col">
                   <label htmlFor="calories" className="mb-1 text-darkerPurple">
                     <Flame className="inline mr-2 text-darkerPurple" size={20} />{" "}
-                    Calories
+                    {isDefault ? "MAX Calories" : "Calories"}
                   </label>
                   <div className="relative">
-                    <Flame
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-darkerPurple"
-                      size={20}
-                    />
                     <input
                       type="number"
                       id="calories"
                       name="calories"
                       value={formData.calories}
                       onChange={handleChange}
-                      className="w-full p-3 pl-10 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
+                      className="w-full p-3 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
                       required
                     />
                   </div>
@@ -121,21 +134,17 @@ function Home() {
                 {/* Fat Field */}
                 <div className="flex flex-col">
                   <label htmlFor="fat" className="mb-1 text-darkerPurple">
-                    <Droplet className="inline mr-2 text-darkerPurple" size={20} /> Fat
-                    (g)
+                    <Droplet className="inline mr-2 text-darkerPurple" size={20} />{" "}
+                    {isDefault ? "MAX Fat (g)" : "Fat (g)"}
                   </label>
                   <div className="relative">
-                    <Droplet
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-darkerPurple"
-                      size={20}
-                    />
                     <input
                       type="number"
                       id="fat"
                       name="fat"
                       value={formData.fat}
                       onChange={handleChange}
-                      className="w-full p-3 pl-10 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
+                      className="w-full p-3 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
                       required
                     />
                   </div>
@@ -143,21 +152,17 @@ function Home() {
                 {/* Carbohydrates Field */}
                 <div className="flex flex-col">
                   <label htmlFor="carbohydrates" className="mb-1 text-darkerPurple">
-                    <Layers className="inline mr-2 text-darkerPurple" size={20} /> Carbohydrates
-                    (g)
+                    <Layers className="inline mr-2 text-darkerPurple" size={20} />{" "}
+                    {isDefault ? "MAX Carbohydrates (g)" : "Carbohydrates (g)"}
                   </label>
                   <div className="relative">
-                    <Layers
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-darkerPurple"
-                      size={20}
-                    />
                     <input
                       type="number"
                       id="carbohydrates"
                       name="carbohydrates"
                       value={formData.carbohydrates}
                       onChange={handleChange}
-                      className="w-full p-3 pl-10 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
+                      className="w-full p-3 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
                       required
                     />
                   </div>
@@ -165,20 +170,17 @@ function Home() {
                 {/* Protein Field */}
                 <div className="flex flex-col">
                   <label htmlFor="protein" className="mb-1 text-darkerPurple">
-                    <Zap className="inline mr-2 text-darkerPurple" size={20} /> Protein (g)
+                    <Zap className="inline mr-2 text-darkerPurple" size={20} />{" "}
+                    {isDefault ? "MAX Protein (g)" : "Protein (g)"}
                   </label>
                   <div className="relative">
-                    <Zap
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-darkerPurple"
-                      size={20}
-                    />
                     <input
                       type="number"
                       id="protein"
                       name="protein"
                       value={formData.protein}
                       onChange={handleChange}
-                      className="w-full p-3 pl-10 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
+                      className="w-full p-3 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
                       required
                     />
                   </div>
@@ -186,21 +188,17 @@ function Home() {
                 {/* Cholesterol Field */}
                 <div className="flex flex-col">
                   <label htmlFor="cholesterol" className="mb-1 text-darkerPurple">
-                    <Heart className="inline mr-2 text-darkerPurple" size={20} /> Cholesterol
-                    (mg)
+                    <Heart className="inline mr-2 text-darkerPurple" size={20} />{" "}
+                    {isDefault ? "MAX Cholesterol (mg)" : "Cholesterol (mg)"}
                   </label>
                   <div className="relative">
-                    <Heart
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-darkerPurple"
-                      size={20}
-                    />
                     <input
                       type="number"
                       id="cholesterol"
                       name="cholesterol"
                       value={formData.cholesterol}
                       onChange={handleChange}
-                      className="w-full p-3 pl-10 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
+                      className="w-full p-3 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
                       required
                     />
                   </div>
@@ -208,20 +206,17 @@ function Home() {
                 {/* Sodium Field */}
                 <div className="flex flex-col">
                   <label htmlFor="sodium" className="mb-1 text-darkerPurple">
-                    <Percent className="inline mr-2 text-darkerPurple" size={20} /> Sodium (mg)
+                    <Percent className="inline mr-2 text-darkerPurple" size={20} />{" "}
+                    {isDefault ? "MAX Sodium (mg)" : "Sodium (mg)"}
                   </label>
                   <div className="relative">
-                    <Percent
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-darkerPurple"
-                      size={20}
-                    />
                     <input
                       type="number"
                       id="sodium"
                       name="sodium"
                       value={formData.sodium}
                       onChange={handleChange}
-                      className="w-full p-3 pl-10 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
+                      className="w-full p-3 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
                       required
                     />
                   </div>
@@ -229,20 +224,17 @@ function Home() {
                 {/* Fiber Field */}
                 <div className="flex flex-col">
                   <label htmlFor="fiber" className="mb-1 text-darkerPurple">
-                    <Leaf className="inline mr-2 text-darkerPurple" size={20} /> Fiber (g)
+                    <Leaf className="inline mr-2 text-darkerPurple" size={20} />{" "}
+                    {isDefault ? "MAX Fiber (g)" : "Fiber (g)"}
                   </label>
                   <div className="relative">
-                    <Leaf
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-darkerPurple"
-                      size={20}
-                    />
                     <input
                       type="number"
                       id="fiber"
                       name="fiber"
                       value={formData.fiber}
                       onChange={handleChange}
-                      className="w-full p-3 pl-10 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
+                      className="w-full p-3 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
                       required
                     />
                   </div>
@@ -256,28 +248,17 @@ function Home() {
                 <div className="flex flex-col gap-4">
                   {leftIndices.map((i) => (
                     <div key={i} className="flex flex-col">
-                      <label
-                        htmlFor={`ingredient-${i}`}
-                        className="mb-1 text-darkerPurple"
-                      >
-                        <Tag
-                          className="inline mr-2 text-darkerPurple"
-                          size={20}
-                        />{" "}
-                        Ingredient {i + 1}:
+                      <label htmlFor={`ingredient-${i}`} className="mb-1 text-darkerPurple">
+                        <Tag className="inline mr-2 text-darkerPurple" size={20} /> Ingredient {i + 1}:
                       </label>
                       <div className="relative">
-                        <Tag
-                          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-darkerPurple"
-                          size={20}
-                        />
                         <input
                           type="text"
                           id={`ingredient-${i}`}
                           name={`ingredient-${i}`}
                           value={formData.ingredients[i]}
                           onChange={(e) => handleIngredientChange(i, e)}
-                          className="w-full p-3 pl-10 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
+                          className="w-full p-3 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
                           required
                         />
                       </div>
@@ -297,28 +278,17 @@ function Home() {
                 <div className="flex flex-col gap-4">
                   {rightIndices.map((i) => (
                     <div key={i} className="flex flex-col">
-                      <label
-                        htmlFor={`ingredient-${i}`}
-                        className="mb-1 text-darkerPurple"
-                      >
-                        <Tag
-                          className="inline mr-2 text-darkerPurple"
-                          size={20}
-                        />{" "}
-                        Ingredient {i + 1}:
+                      <label htmlFor={`ingredient-${i}`} className="mb-1 text-darkerPurple">
+                        <Tag className="inline mr-2 text-darkerPurple" size={20} /> Ingredient {i + 1}:
                       </label>
                       <div className="relative">
-                        <Tag
-                          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-darkerPurple"
-                          size={20}
-                        />
                         <input
                           type="text"
                           id={`ingredient-${i}`}
                           name={`ingredient-${i}`}
                           value={formData.ingredients[i]}
                           onChange={(e) => handleIngredientChange(i, e)}
-                          className="w-full p-3 pl-10 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
+                          className="w-full p-3 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
                           required
                         />
                       </div>
@@ -338,7 +308,15 @@ function Home() {
 
             {/* Navigation Buttons */}
             <div className="flex justify-between mt-6">
-              {step > 1 && (
+              {step === 1 ? (
+                <button
+                  onClick={handleSetDefault}
+                  type="button"
+                  className="bg-gray-300 text-darkerPurple py-2 px-4 rounded hover:bg-gray-400 transition"
+                >
+                  Set to Default
+                </button>
+              ) : (
                 <button
                   onClick={handlePrev}
                   className="bg-darkerPurple/50 text-white py-2 px-4 rounded hover:bg-darkerPurple/40 transition"
