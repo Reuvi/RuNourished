@@ -1,7 +1,6 @@
 const validator = require('validator'); 
 const bcrypt = require("bcryptjs");
 const User = require("../../models/User");
-const mongoose = require("mongoose"); 
 
 const register = async (username, password, email) => {
 
