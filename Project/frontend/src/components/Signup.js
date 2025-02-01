@@ -12,14 +12,14 @@ function Signup() {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      // Adjust the endpoint and payload as needed.
-      const response = await api.post('/v1/users/signup', { username, email, password });
-      console.log(response);
-      // Save the auth token (or similar) to localStorage.
-      localStorage.setItem("authToken", response.data.token);
+      // Use the new registration route
+      const response = await api.post('/v1/users/register', { username, email, password });
+      console.log(response.data.message);
+      // If needed, you could display the success message or store data here.
       navigate("/home");
     } catch (err) {
-      console.error("Error signing up:", err);
+      console.error("Error signing up:", err.response?.data?.error || err.message);
+      alert(err.response?.data?.error || "Signup failed. Please try again.");
     }
   };
 
