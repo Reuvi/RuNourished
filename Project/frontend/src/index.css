@@ -16,3 +16,38 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Custom background that uses theme colors from tailwind.config.js */
+.bg-custom {
+  /* Uses the Tailwind JIT "theme" helper in your CSS build process */
+  background: radial-gradient(circle at 70% 20%, theme('colors.deeperPurple') 0%, transparent 25%),
+              radial-gradient(circle at 30% 80%, theme('colors.deeperPurple') 0%, transparent 25%),
+              linear-gradient(45deg, theme('colors.mintAqua'), theme('colors.softBlue'), theme('colors.lavender'), theme('colors.paleYellow'));
+}
+
+/* Floating orb decorative elements */
+.orb-large {
+  background: radial-gradient(circle, theme('colors.paleYellow'), theme('colors.softBlue'));
+  width: 16rem; /* equivalent to w-64 */
+  height: 16rem;
+  border-radius: 9999px;
+  filter: blur(1.5rem); /* approximate blur-3xl */
+  opacity: 0.6;
+  position: absolute;
+  top: 20%;
+  left: 60%;
+  transform: translate(-50%, -50%);
+}
+
+.orb-small {
+  background: radial-gradient(circle, theme('colors.lavender'), theme('colors.mintAqua'));
+  width: 8rem; /* equivalent to w-32 */
+  height: 8rem;
+  border-radius: 9999px;
+  filter: blur(1rem); /* approximate blur-2xl */
+  opacity: 0.5;
+  position: absolute;
+  top: 60%;
+  left: 30%;
+  transform: translate(-50%, -50%);
+}

@@ -1,27 +1,34 @@
+// src/App.js
 import React from "react";
-import { useLocation } from "react-router-dom";
-import Navbar from "./Navbar";
-import { Login, Home } from "."; // Assumes Login and Home components are exported from index.js
+import { Routes, Route, Navigate } from "react-router-dom";
+import { Navbar, Login, Signup, Home } from "./";
 
 function App() {
-  const location = useLocation();
-
-  // Render the proper component based on the current route
-  const renderComponent = () => {
-    switch (location.pathname) {
-      case "/login":
-        return <Login />;
-      case "/home":
-      default:
-        return <Home />;
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-paleYellow">
-      <Navbar />
-      <div className="p-4">{renderComponent()}</div>
-    </div>
+    <Routes>
+      {/* Redirect the base path to login */}
+      <Route path="/" element={<Navigate to="/login" />} />
+      
+      {/* Public routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      
+      {/* Public Home route for now */}
+      <Route
+        path="/home"
+        element={
+          <div className="h-screen flex flex-col">
+            <Navbar />
+            <main className="flex-1">
+              <Home />
+            </main>
+          </div>
+        }
+      />
+      
+      {/* Fallback route */}
+      <Route path="*" element={<Navigate to="/login" />} />
+    </Routes>
   );
 }
 
