@@ -7,7 +7,6 @@ function Navbar() {
   const [username, setUsername] = useState('');
   const [isDropdownOpen, setDropdownOpen] = useState(false);
 
-  // Helper function to get a cookie by name
   function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -15,26 +14,34 @@ function Navbar() {
     return null;
   }
 
-  useEffect(() => {
-    // Read the "values" cookie to extract the username
+  const updateUsernameFromCookie = () => {
     const valuesCookie = getCookie('values');
     if (valuesCookie) {
       try {
         const values = JSON.parse(valuesCookie);
-
-        // Again, match your cookie’s key name:
         setUsername(values.userName || '');
       } catch (err) {
         console.error("Failed to parse values cookie:", err);
       }
+    } else {
+      setUsername(''); // Reset if cookie is removed
     }
+  };
+
+  useEffect(() => {
+    updateUsernameFromCookie();
+
+    const observer = new MutationObserver(() => {
+      updateUsernameFromCookie();
+    });
+
+    observer.observe(document, { subtree: true, childList: true });
+    return () => observer.disconnect();
   }, []);
 
   const handleSignOut = () => {
-    // Delete cookies by setting their expiration dates in the past
     document.cookie = "jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     document.cookie = "values=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    // Then redirect to the login page
     navigate("/login");
   };
 
@@ -42,7 +49,6 @@ function Navbar() {
     <nav className="sticky top-0 z-50 bg-darkerPurple backdrop-blur-md shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Left side (logo/link) */}
           <div className="flex items-center h-full">
             <Link to="/home" className="flex items-center h-full">
               <img
@@ -52,8 +58,6 @@ function Navbar() {
               />
             </Link>
           </div>
-
-          {/* Right side (nav links & profile dropdown) */}
           <div className="flex items-center space-x-4">
             <Link to="/home" className="text-white hover:text-paleYellow transition">
               Home
@@ -61,13 +65,11 @@ function Navbar() {
             <Link to="/cookbook" className="text-white hover:text-paleYellow transition">
               Cookbook
             </Link>
-            {/* Profile Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setDropdownOpen(!isDropdownOpen)}
                 className="flex items-center text-white focus:outline-none"
               >
-                {/* If the userName doesn't exist, show "Profile" */}
                 <span>{username || "Profile"}</span>
                 <svg className="ml-1 h-4 w-4 fill-current" viewBox="0 0 20 20">
                   <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
