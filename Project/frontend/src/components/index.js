@@ -2,6 +2,7 @@ import Login from "./Login";
 import Signup from "./Signup";
 import RecipeGeneration from "./RecipeGeneration";
 import IngredientGeneration from "./IngredientGeneration";
+import IngredientsDetails from "./IngredientsDetails";
 import Navbar from "./Navbar";
 import Cookbook from "./Cookbook";
 import Profile from "./Profile";
@@ -19,5 +20,6 @@ export {
   Cookbook, 
   RecipeDetails, 
   RecipeGeneration, 
-  IngredientGeneration 
+  IngredientGeneration,
+  IngredientsDetails
 };
