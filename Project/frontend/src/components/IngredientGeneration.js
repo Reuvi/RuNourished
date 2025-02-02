@@ -48,14 +48,10 @@ function IngredientGeneration() {
         navigate("/ingredient", { state: { ingredient: firstResult } });
       } else if (activeTab === "image") {
         // Post using image upload
-        const formData = new FormData();
-        formData.append("image", selectedImage);
-        formData.append("values", getCookie("values"));
-        formData.append("jwt", getCookie("jwt"));
-        const response = await api.post("/v1/ai/get_ingredient_image", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+        const response = await api.post("/v1/ai/get_ingredient_image", {
+          image: selectedImage,
+          values: getCookie("values"),
+          jwt: getCookie("jwt"),
         });
         console.log("Response from AI model (image):", response.data);
         const firstResult = response.data.data.result[0];
