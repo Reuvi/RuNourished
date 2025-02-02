@@ -4,7 +4,6 @@ const { get_recipe } = require("../../services/ai/get_recipe");
 module.exports = async (req, res) => {
     
     const {calories, fat, carbohydrates, protein, cholesterol, sodium, fiber, ingredients} = req.body
-    
     const response = await get_recipe(calories, fat, carbohydrates, protein, cholesterol, sodium, fiber, ingredients);
 
     if(response.success) {

@@ -28,6 +28,13 @@ function Home() {
     ingredients: [""]
   });
 
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+  }
+
   // Handler for nutritional fields
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -59,7 +66,7 @@ function Home() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.post("/v1/ai/get_recipe", formData);
+      const response = await api.post("/v1/ai/get_recipe", {...formData, values: getCookie("values"), jwt: getCookie("jwt")});
       console.log("Response from AI model:", response.data);
       // Optionally reset the form or step here
       setStep(1);
