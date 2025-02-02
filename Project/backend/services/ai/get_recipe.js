@@ -12,7 +12,6 @@ const get_recipe = async (calories, fat, carbohydrates, protein, cholesterol, so
         calories, fat, carbohydrates, protein, cholesterol, sodium, fiber, ingredients
     }
 
-    console.log("Hello");
 
 
     //Application of discrete 1 , demorgans law :)
