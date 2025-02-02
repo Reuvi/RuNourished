@@ -59,7 +59,7 @@ function Home() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.post("/ai-model", formData);
+      const response = await api.post("/v1/ai/get_recipe", formData);
       console.log("Response from AI model:", response.data);
       // Optionally reset the form or step here
       setStep(1);

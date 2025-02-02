@@ -19,7 +19,11 @@ const get_recipe = async (calories, fat, carbohydrates, protein, cholesterol, so
             return response;
         }
 
-        const recipe = await axios.get("AIServerAPI_To_Be_Added");
+        const recipe = await axios.get("http//:127.0.0.1:5004/ai-model");
+
+        console.log(recipe);
+
+        return
 
         // will added parsing for recipe soon
         
