@@ -67,6 +67,9 @@ function Navbar() {
             <Link to="/recipe/generate" className="text-white hover:text-paleYellow transition">
               Generate Recipe
             </Link>
+            <Link to="/ingredient/generate" className="text-white hover:text-paleYellow transition">
+              Generate Ingredients
+            </Link>
             <div className="relative">
               <button
                 onClick={() => setDropdownOpen(!isDropdownOpen)}
