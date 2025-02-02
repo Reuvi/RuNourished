@@ -1,7 +1,6 @@
 import os
 import re
 import pickle
-import random
 from flask import Flask, request, jsonify
 import pandas as pd
 import numpy as np
@@ -100,7 +99,7 @@ def predict(input_data):
         # Get recommendations using the pre-trained predictor
         distance, indexes = RecipePredictor.kneighbors(combined_inputs)
         recoms = recipes.iloc[indexes[0]]
-        return recoms[['recipe_name', 'ingredients_list', 'image_url', 'aver_rate', 'review_nums']].to_dict(orient='records')
+        return recoms[['recipe_name', 'ingredients_list', 'image_url', 'aver_rate', 'review_nums', 'calories', 'fat', 'carbohydrates', 'protein', 'cholesterol', 'sodium', 'fiber']].to_dict(orient='records')
     except Exception as e:
         return {"error": str(e)}
 
@@ -138,8 +137,8 @@ def ai_model():
         if isinstance(result, dict) and result.get("error"):
             return jsonify({"error": result["error"]}), 500
 
-        # Randomly select one of the recommended recipes
-        selected_recipe = random.choice(result)
+        # Select the first recommended recipe details
+        selected_recipe = result[0]
         recipe_name = selected_recipe['recipe_name']
         ingr_str = selected_recipe['ingredients_list']
 

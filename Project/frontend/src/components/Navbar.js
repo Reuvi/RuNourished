@@ -1,4 +1,3 @@
-// Navbar.js
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -64,6 +63,9 @@ function Navbar() {
             </Link>
             <Link to="/cookbook" className="text-white hover:text-paleYellow transition">
               Cookbook
+            </Link>
+            <Link to="/recipe/generate" className="text-white hover:text-paleYellow transition">
+              Generate Recipe
             </Link>
             <div className="relative">
               <button
