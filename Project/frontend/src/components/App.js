@@ -1,8 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { Navbar, Login, Signup, Home, Cookbook, Profile } from "./";
+import { Navbar, Login, Signup, Home, Cookbook, Profile, RecipeDetails, RecipeGeneration } from "./";
 
-// Helper function to get a cookie by name
 function getCookie(name) {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
@@ -10,13 +9,11 @@ function getCookie(name) {
   return null;
 }
 
-// ProtectedRoute: Only allow access if the "jwt" cookie exists
-function ProtectedRoute({ children }) {
+function ProtectedRouteWrapper({ children }) {
   const jwt = getCookie("jwt");
   return jwt ? children : <Navigate to="/login" />;
 }
 
-// PublicRoute: If user is already authenticated, redirect to home
 function PublicRoute({ children }) {
   const jwt = getCookie("jwt");
   return jwt ? <Navigate to="/home" /> : children;
@@ -25,7 +22,7 @@ function PublicRoute({ children }) {
 function App() {
   return (
     <Routes>
-      {/* Redirect the base path to login */}
+      {/* Redirect base path to login */}
       <Route path="/" element={<Navigate to="/login" />} />
       
       {/* Public routes */}
@@ -36,14 +33,14 @@ function App() {
       <Route
         path="/home"
         element={
-          <ProtectedRoute>
+          <ProtectedRouteWrapper>
             <div className="h-screen flex flex-col">
               <Navbar />
               <main className="flex-1">
                 <Home />
               </main>
             </div>
-          </ProtectedRoute>
+          </ProtectedRouteWrapper>
         }
       />
 
@@ -51,14 +48,14 @@ function App() {
       <Route
         path="/cookbook"
         element={
-          <ProtectedRoute>
+          <ProtectedRouteWrapper>
             <div className="h-screen flex flex-col">
               <Navbar />
               <main className="flex-1">
                 <Cookbook />
               </main>
             </div>
-          </ProtectedRoute>
+          </ProtectedRouteWrapper>
         }
       />
 
@@ -66,17 +63,47 @@ function App() {
       <Route
         path="/profile"
         element={
-          <ProtectedRoute>
+          <ProtectedRouteWrapper>
             <div className="h-screen flex flex-col">
               <Navbar />
               <main className="flex-1">
                 <Profile />
               </main>
             </div>
-          </ProtectedRoute>
+          </ProtectedRouteWrapper>
         }
       />
-      
+
+      {/* Protected Recipe Generation route */}
+      <Route
+        path="/recipe/generate"
+        element={
+          <ProtectedRouteWrapper>
+            <div className="h-screen flex flex-col">
+              <Navbar />
+              <main className="flex-1">
+                <RecipeGeneration />
+              </main>
+            </div>
+          </ProtectedRouteWrapper>
+        }
+      />
+
+      {/* Protected Recipe Details route */}
+      <Route
+        path="/recipe"
+        element={
+          <ProtectedRouteWrapper>
+            <div className="h-screen flex flex-col">
+              <Navbar />
+              <main className="flex-1">
+                <RecipeDetails />
+              </main>
+            </div>
+          </ProtectedRouteWrapper>
+        }
+      />
+
       {/* Fallback route */}
       <Route path="*" element={<Navigate to="/login" />} />
     </Routes>

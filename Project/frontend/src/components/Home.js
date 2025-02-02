@@ -1,362 +1,146 @@
-import React, { useState } from "react";
-import api from "../api/api";
-import {
-  Flame,
-  Droplet,
-  Layers,
-  Zap,
-  Heart,
-  Leaf,
-  Tag,
-  PlusCircle,
-  Percent
-} from "lucide-react";
+import React from 'react';
+import { Search, Heart, Filter, Github, Linkedin } from 'lucide-react';
 
-function Home() {
-  // Two-step form:
-  // Step 1: Nutritional Preferences
-  // Step 2: Ingredients (with option to add as many as desired)
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    calories: "",
-    fat: "",
-    carbohydrates: "",
-    protein: "",
-    cholesterol: "",
-    sodium: "",
-    fiber: "",
-    ingredients: [""]
-  });
-
-  function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return null;
-  }
-
-  // Handler for nutritional fields
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  // Update a single ingredient
-  const handleIngredientChange = (index, e) => {
-    const newIngredients = [...formData.ingredients];
-    newIngredients[index] = e.target.value;
-    setFormData({ ...formData, ingredients: newIngredients });
-  };
-
-  // Add a new ingredient field
-  const handleAddIngredient = (e) => {
-    e.preventDefault();
-    setFormData({ ...formData, ingredients: [...formData.ingredients, ""] });
-  };
-
-  const handleNext = (e) => {
-    e.preventDefault();
-    setStep(2);
-  };
-
-  const handlePrev = (e) => {
-    e.preventDefault();
-    setStep(1);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await api.post("/v1/ai/get_recipe", {...formData, values: getCookie("values"), jwt: getCookie("jwt")});
-      console.log("Response from AI model:", response.data);
-      // Optionally reset the form or step here
-      setStep(1);
-    } catch (error) {
-      console.error("Error posting data:", error);
+const HomePage = () => {
+  const developers = [
+    {
+      name: 'Oluwatomisin Abiola',
+      role: 'Team Member',
+      image: '/images/tomisin.webp',
+      github: '#',
+      linkedin: 'https://www.linkedin.com/in/oluwatomisin-abiola'
+    },
+    {
+      name: 'Reuvi Israeli',
+      role: 'Team Member',
+      image: '/images/reuvi.webp',
+      github: 'https://github.com/Reuvi',
+      linkedin: 'https://www.linkedin.com/in/reuven-israeli-7a865520b/'
+    },
+    {
+      name: 'Krish Kuber',
+      role: 'Team Member',
+      image: '/images/krish.jpg',
+      github: '#',
+      linkedin: '#'
+    },
+    {
+      name: 'Ikey Sasson',
+      role: 'Team Member',
+      image: '/images/ikeysasson.jpg',
+      github: 'https://github.com/IsaacSasson',
+      linkedin: 'https://www.linkedin.com/in/isaac-sasson/'
     }
-  };
+  ];
 
-  // Fill ONLY empty fields with default values
-  const handleFillEmptyFields = (e) => {
-    e.preventDefault();
-    const newFormData = { ...formData };
-    if (!newFormData.calories) newFormData.calories = "1000";
-    if (!newFormData.fat) newFormData.fat = "50";
-    if (!newFormData.carbohydrates) newFormData.carbohydrates = "150";
-    if (!newFormData.protein) newFormData.protein = "100";
-    if (!newFormData.cholesterol) newFormData.cholesterol = "300";
-    if (!newFormData.sodium) newFormData.sodium = "1500";
-    if (!newFormData.fiber) newFormData.fiber = "20";
-    setFormData(newFormData);
-  };
+  const Feature = ({ icon: Icon, title, description }) => (
+    <div className="flex flex-col items-center p-6 bg-white bg-opacity-20 backdrop-blur-lg rounded-lg transition-transform duration-300 hover:transform hover:scale-105">
+      <div className="p-3 rounded-full bg-purple-100 mb-4">
+        <Icon size={24} style={{ color: '#4B0082' }} />
+      </div>
+      <h3 className="text-xl font-semibold mb-2" style={{ color: '#4B0082' }}>{title}</h3>
+      <p className="text-center" style={{ color: '#4B0082' }}>{description}</p>
+    </div>
+  );
 
-  // For Step 2, split the ingredients array into two columns based on index.
-  const nextIndex = formData.ingredients.length;
-  const leftIndices = formData.ingredients
-    .map((_, i) => i)
-    .filter((i) => i % 2 === 0);
-  const rightIndices = formData.ingredients
-    .map((_, i) => i)
-    .filter((i) => i % 2 === 1);
-
-  return (
-    <div className="h-full relative overflow-hidden bg-custom">
-      {/* Floating decorative orbs */}
-      <div className="orb-large"></div>
-      <div className="orb-small"></div>
-
-      <div className="relative flex items-center justify-center h-full px-4">
-        {/* Transparent form container with strong blur (similar to Login) */}
-        <div className="bg-white bg-opacity-20 backdrop-blur-lg p-8 rounded-lg shadow-xl w-full max-w-4xl my-10">
-          <h2 className="text-3xl font-bold mb-6 text-darkerPurple text-center">
-            Customize Your Recipe Preferences
-          </h2>
-          <p className="text-center mb-4 text-darkerPurple">Step {step} of 2</p>
-          <form
-            onSubmit={step === 2 ? handleSubmit : handleNext}
-            className="grid grid-cols-1 gap-6"
-          >
-            {step === 1 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
-                {/* Calories Field */}
-                <div className="flex flex-col">
-                  <label htmlFor="calories" className="mb-1 text-darkerPurple">
-                    <Flame className="inline mr-2 text-darkerPurple" size={20} />
-                    Max Calories
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      id="calories"
-                      name="calories"
-                      value={formData.calories}
-                      onChange={handleChange}
-                      className="w-full p-3 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
-                      required
-                    />
-                  </div>
-                </div>
-                {/* Fat Field */}
-                <div className="flex flex-col">
-                  <label htmlFor="fat" className="mb-1 text-darkerPurple">
-                    <Droplet className="inline mr-2 text-darkerPurple" size={20} />
-                    Max Fat (g)
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      id="fat"
-                      name="fat"
-                      value={formData.fat}
-                      onChange={handleChange}
-                      className="w-full p-3 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
-                      required
-                    />
-                  </div>
-                </div>
-                {/* Carbohydrates Field */}
-                <div className="flex flex-col">
-                  <label
-                    htmlFor="carbohydrates"
-                    className="mb-1 text-darkerPurple"
-                  >
-                    <Layers className="inline mr-2 text-darkerPurple" size={20} />
-                    Max Carbohydrates (g)
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      id="carbohydrates"
-                      name="carbohydrates"
-                      value={formData.carbohydrates}
-                      onChange={handleChange}
-                      className="w-full p-3 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
-                      required
-                    />
-                  </div>
-                </div>
-                {/* Protein Field */}
-                <div className="flex flex-col">
-                  <label htmlFor="protein" className="mb-1 text-darkerPurple">
-                    <Zap className="inline mr-2 text-darkerPurple" size={20} />
-                    Max Protein (g)
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      id="protein"
-                      name="protein"
-                      value={formData.protein}
-                      onChange={handleChange}
-                      className="w-full p-3 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
-                      required
-                    />
-                  </div>
-                </div>
-                {/* Cholesterol Field */}
-                <div className="flex flex-col">
-                  <label htmlFor="cholesterol" className="mb-1 text-darkerPurple">
-                    <Heart className="inline mr-2 text-darkerPurple" size={20} />
-                    Max Cholesterol (mg)
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      id="cholesterol"
-                      name="cholesterol"
-                      value={formData.cholesterol}
-                      onChange={handleChange}
-                      className="w-full p-3 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
-                      required
-                    />
-                  </div>
-                </div>
-                {/* Sodium Field */}
-                <div className="flex flex-col">
-                  <label htmlFor="sodium" className="mb-1 text-darkerPurple">
-                    <Percent className="inline mr-2 text-darkerPurple" size={20} />
-                    Max Sodium (mg)
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      id="sodium"
-                      name="sodium"
-                      value={formData.sodium}
-                      onChange={handleChange}
-                      className="w-full p-3 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
-                      required
-                    />
-                  </div>
-                </div>
-                {/* Fiber Field */}
-                <div className="flex flex-col">
-                  <label htmlFor="fiber" className="mb-1 text-darkerPurple">
-                    <Leaf className="inline mr-2 text-darkerPurple" size={20} />
-                    Max Fiber (g)
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      id="fiber"
-                      name="fiber"
-                      value={formData.fiber}
-                      onChange={handleChange}
-                      className="w-full p-3 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {step === 2 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
-                {/* Left Column (even-index ingredients) */}
-                <div className="flex flex-col gap-4">
-                  {leftIndices.map((i) => (
-                    <div key={i} className="flex flex-col">
-                      <label htmlFor={`ingredient-${i}`} className="mb-1 text-darkerPurple">
-                        <Tag className="inline mr-2 text-darkerPurple" size={20} /> 
-                        Ingredient {i + 1}:
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          id={`ingredient-${i}`}
-                          name={`ingredient-${i}`}
-                          value={formData.ingredients[i]}
-                          onChange={(e) => handleIngredientChange(i, e)}
-                          className="w-full p-3 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
-                          required
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  {nextIndex % 2 === 0 && (
-                    <button
-                      onClick={handleAddIngredient}
-                      className="flex items-center text-darkerPurple hover:text-darkerPurple/80 transition"
-                    >
-                      <PlusCircle size={24} className="mr-2" /> Add Ingredient
-                    </button>
-                  )}
-                </div>
-
-                {/* Right Column (odd-index ingredients) */}
-                <div className="flex flex-col gap-4">
-                  {rightIndices.map((i) => (
-                    <div key={i} className="flex flex-col">
-                      <label htmlFor={`ingredient-${i}`} className="mb-1 text-darkerPurple">
-                        <Tag className="inline mr-2 text-darkerPurple" size={20} /> 
-                        Ingredient {i + 1}:
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          id={`ingredient-${i}`}
-                          name={`ingredient-${i}`}
-                          value={formData.ingredients[i]}
-                          onChange={(e) => handleIngredientChange(i, e)}
-                          className="w-full p-3 bg-white bg-opacity-70 border border-gray-200 rounded-md focus:outline-none focus:border-gray-800 focus:ring-1 focus:ring-gray-800 transition duration-200"
-                          required
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  {nextIndex % 2 === 1 && (
-                    <button
-                      onClick={handleAddIngredient}
-                      className="flex items-center text-darkerPurple hover:text-darkerPurple/80 transition"
-                    >
-                      <PlusCircle size={24} className="mr-2" /> Add Ingredient
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-6">
-              {step === 1 ? (
-                <button
-                  onClick={handleFillEmptyFields}
-                  type="button"
-                  className="bg-gray-300 text-darkerPurple py-2 px-4 rounded hover:bg-gray-400 transition"
-                >
-                  Fill Empty Fields With Default
-                </button>
-              ) : (
-                <button
-                  onClick={handlePrev}
-                  className="bg-darkerPurple/50 text-white py-2 px-4 rounded hover:bg-darkerPurple/40 transition"
-                >
-                  Previous
-                </button>
-              )}
-              <div className="ml-auto">
-                {step < 2 && (
-                  <button
-                    type="submit"
-                    className="bg-darkerPurple text-white py-2 px-4 rounded hover:bg-darkerPurple/90 transition"
-                  >
-                    Next
-                  </button>
-                )}
-                {step === 2 && (
-                  <button
-                    type="submit"
-                    className="bg-darkerPurple text-white py-2 px-4 rounded hover:bg-darkerPurple/90 transition"
-                  >
-                    Submit
-                  </button>
-                )}
-              </div>
-            </div>
-          </form>
-        </div>
+  const DeveloperCard = ({ developer }) => (
+    <div className="flex flex-col items-center p-6 bg-white bg-opacity-20 backdrop-blur-lg rounded-lg transition-transform duration-300 hover:transform hover:scale-105">
+      <img
+        src={developer.image}
+        alt={developer.name}
+        className="w-24 h-24 rounded-full mb-4 object-cover"
+      />
+      <h3 className="text-lg font-semibold mb-1" style={{ color: '#4B0082' }}>{developer.name}</h3>
+      <p className="text-sm mb-3" style={{ color: '#4B0082' }}>{developer.role}</p>
+      <div className="flex space-x-3">
+        <a href={developer.github} className="text-purple-600 hover:text-purple-800">
+          <Github size={20} />
+        </a>
+        <a href={developer.linkedin} className="text-purple-600 hover:text-purple-800">
+          <Linkedin size={20} />
+        </a>
       </div>
     </div>
   );
-}
 
-export default Home;
+  return (
+    <div className="min-h-screen relative overflow-hidden"
+         style={{
+           background: `radial-gradient(circle at 70% 20%, #9370DB 0%, transparent 25%),
+                        radial-gradient(circle at 30% 80%, #9370DB 0%, transparent 25%),
+                        linear-gradient(45deg, #A7E8D0, #ADD8E6, #B8B5E1, #F5E6CA)`
+         }}>
+      
+      {/* Combined Hero & About Section */}
+      <section className="py-12 bg-white bg-opacity-20">
+        <div className="container mx-auto px-4 text-center">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4 mb-6">
+            <img
+              src="/images/logo_light_background.png"
+              alt="RU Nourished"
+              className="h-20"
+            />
+          </div>
+          <p className="text-2xl text-darkerPurple mb-4">
+            Welcome to RU Nourished – Your journey to healthy recipes starts here.
+          </p>
+          <p className="text-lg text-darkerPurple max-w-3xl mx-auto">
+            RU Nourished is an innovative platform that leverages artificial intelligence to transform your culinary experience. Generate unique recipes based on your preferred ingredients and nutritional facts, discover the ingredients behind your favorite dishes, or simply upload an image and let our AI detect the ingredients for you. Embrace a personalized journey to healthier eating.
+          </p>
+        </div>
+      </section>
+
+      {/* Features Section: Transparent overlay */}
+      <section className="py-16 bg-white bg-opacity-20">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <Feature
+              icon={Search}
+              title="Ingredient-Based Search"
+              description="Find recipes based on ingredients you have or want to use"
+            />
+            <Feature
+              icon={Filter}
+              title="Nutritional Filtering"
+              description="Filter recipes by calories, protein, carbs, and more"
+            />
+            <Feature
+              icon={Heart}
+              title="AI-Driven Insights"
+              description="Generate recipes, extract ingredients from recipes or images"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Meet Our Team Section: Transparent overlay */}
+      <section className="py-12 bg-white bg-opacity-20">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-8 text-darkerPurple">Meet Our Team</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {developers.map((developer, index) => (
+              <DeveloperCard key={index} developer={developer} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Call to Action Section: Less transparent overlay for strong contrast */}
+      <section className="py-8 bg-darkerPurple bg-opacity-90">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-4 text-white">
+            Start Your Healthy Cooking Journey
+          </h2>
+          <p className="text-lg mb-6 text-white">
+            Join RU Nourished today and explore recipes tailored to your nutritional needs.
+          </p>
+          <button className="bg-white text-darkerPurple px-8 py-3 rounded-full hover:bg-gray-200 transition-colors duration-300">
+            Get Started
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+export default HomePage;

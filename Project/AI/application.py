@@ -99,7 +99,7 @@ def predict(input_data):
         # Get recommendations using the pre-trained predictor
         distance, indexes = RecipePredictor.kneighbors(combined_inputs)
         recoms = recipes.iloc[indexes[0]]
-        return recoms[['recipe_name', 'ingredients_list', 'image_url', 'aver_rate', 'review_nums']].to_dict(orient='records')
+        return recoms[['recipe_name', 'ingredients_list', 'image_url', 'aver_rate', 'review_nums', 'calories', 'fat', 'carbohydrates', 'protein', 'cholesterol', 'sodium', 'fiber']].to_dict(orient='records')
     except Exception as e:
         return {"error": str(e)}
 
