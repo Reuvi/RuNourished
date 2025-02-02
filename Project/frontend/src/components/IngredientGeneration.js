@@ -18,7 +18,7 @@ function IngredientGeneration() {
     return null;
   }
 
-  // Handlers for text input
+  // Handler for text input
   const handleTextChange = (e) => {
     setRecipeName(e.target.value);
   };
@@ -28,6 +28,20 @@ function IngredientGeneration() {
     if (e.target.files && e.target.files[0]) {
       setSelectedImage(e.target.files[0]);
     }
+  };
+
+  // Convert file to Base64 string
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        // Remove the data prefix, leaving only the Base64 string
+        const base64String = reader.result.split(",")[1];
+        resolve(base64String);
+      };
+      reader.onerror = (error) => reject(error);
+    });
   };
 
   // Submit handler for both modes
@@ -43,18 +57,20 @@ function IngredientGeneration() {
           jwt: getCookie("jwt"),
         });
         console.log("Response from AI model (text):", response.data);
-        // Assuming backend returns: { message: "AI Success", data: { result: [ ... ] } }
+        // Assuming backend returns: { message: "AI Success", data: { ingredient: { result: [ ... ] } } }
         const firstResult = response.data.data.ingredient.result[0];
         navigate("/ingredient", { state: { ingredient: firstResult } });
       } else if (activeTab === "image") {
+        // Convert selected image to Base64
+        const base64Image = await fileToBase64(selectedImage);
         // Post using image upload
         const response = await api.post("/v1/ai/get_ingredient_image", {
-          image: selectedImage,
+          image: base64Image,
           values: getCookie("values"),
           jwt: getCookie("jwt"),
         });
         console.log("Response from AI model (image):", response.data);
-        const firstResult = response.data.data.result[0];
+        const firstResult = response.data.data.ingredient.result[0];
         navigate("/ingredient", { state: { ingredient: firstResult } });
       }
     } catch (error) {
