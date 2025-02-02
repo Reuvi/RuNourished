@@ -18,7 +18,7 @@ function IngredientGeneration() {
     return null;
   }
 
-  // Handlers for text input
+  // Handler for text input
   const handleTextChange = (e) => {
     setRecipeName(e.target.value);
   };
@@ -28,6 +28,20 @@ function IngredientGeneration() {
     if (e.target.files && e.target.files[0]) {
       setSelectedImage(e.target.files[0]);
     }
+  };
+
+  // Convert file to Base64 string
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        // Remove the data prefix, leaving only the Base64 string
+        const base64String = reader.result.split(",")[1];
+        resolve(base64String);
+      };
+      reader.onerror = (error) => reject(error);
+    });
   };
 
   // Submit handler for both modes
@@ -43,20 +57,41 @@ function IngredientGeneration() {
           jwt: getCookie("jwt"),
         });
         console.log("Response from AI model (text):", response.data);
-        navigate("/ingredient", { state: { ingredient: response.data.ingredient.result } });
+        // Assuming backend returns: { message: "AI Success", data: { ingredient: { result: [ ... ] } } }
+        const firstResult = response.data.data.ingredient.result[0];
+        navigate("/ingredient", { state: { ingredient: firstResult } });
       } else if (activeTab === "image") {
+        // Convert selected image to Base64
+        const base64Image = await fileToBase64(selectedImage);
         // Post using image upload
-        const formData = new FormData();
-        formData.append("image", selectedImage);
-        formData.append("values", getCookie("values"));
-        formData.append("jwt", getCookie("jwt"));
-        const response = await api.post("/v1/ai/get_ingredient_image", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+        const response = await api.post("/v1/ai/get_ingredient_image", {
+          image: base64Image,
+          values: getCookie("values"),
+          jwt: getCookie("jwt"),
         });
         console.log("Response from AI model (image):", response.data);
-        navigate("/ingredient", { state: { ingredient: response.data.ingredient.result } });
+
+        // Check the structure of the returned data and adjust accordingly
+        let ingredientData;
+        if (response.data.data.ingredient.result) {
+          // In case the backend uses a "result" property (similar to text)
+          ingredientData = response.data.data.ingredient.result[0];
+        } else if (response.data.data.ingredient.ingredients) {
+          // When the backend returns ingredients directly in an "ingredients" array
+          // You can further process or format this data if needed.
+          ingredientData = {
+            ...response.data.data.ingredient,
+            // Create a comma-separated list for the details page if needed
+            ingredients_list: response.data.data.ingredient.ingredients.join(", "),
+          };
+        } else {
+          // Fallback: use the whole ingredient object
+          ingredientData = response.data.data.ingredient;
+        }
+
+        // Create a preview URL for the uploaded image
+        const imagePreviewUrl = selectedImage ? URL.createObjectURL(selectedImage) : null;
+        navigate("/ingredient", { state: { ingredient: ingredientData, image: imagePreviewUrl } });
       }
     } catch (error) {
       console.error("Error posting data:", error);
@@ -68,7 +103,9 @@ function IngredientGeneration() {
     return (
       <div className="h-full flex flex-col items-center justify-center bg-custom">
         <div className="w-24 h-24 border-t-4 border-blue-500 border-solid rounded-full animate-spin"></div>
-        <p className="mt-4 text-2xl text-darkerPurple">Generating your ingredient...</p>
+        <p className="mt-4 text-2xl text-darkerPurple">
+          Generating your ingredient...
+        </p>
       </div>
     );
   }

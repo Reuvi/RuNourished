@@ -9,7 +9,8 @@ import {
   Profile, 
   RecipeDetails, 
   RecipeGeneration, 
-  IngredientGeneration 
+  IngredientGeneration,
+  IngredientsDetails
 } from "./";
 
 function getCookie(name) {
@@ -108,6 +109,21 @@ function App() {
               <Navbar />
               <main className="flex-1">
                 <IngredientGeneration />
+              </main>
+            </div>
+          </ProtectedRouteWrapper>
+        }
+      />
+
+      {/* Protected Ingredient Details route */}
+      <Route
+        path="/ingredient"
+        element={
+          <ProtectedRouteWrapper>
+            <div className="h-screen flex flex-col">
+              <Navbar />
+              <main className="flex-1">
+                <IngredientsDetails />
               </main>
             </div>
           </ProtectedRouteWrapper>

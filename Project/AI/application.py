@@ -1,15 +1,18 @@
 import os
 import re
-import pickle
-from flask import Flask, request, jsonify
-import pandas as pd
+import base64
+import cv2
 import numpy as np
+import pandas as pd
+from flask import Flask, request, jsonify
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
 from huggingface_hub import InferenceClient, login
-from joblib import load  # Use joblib for memory mapping
+from joblib import load  # For memory mapping
 from dotenv import load_dotenv
-import psutil  # For memory usage checks
+import psutil  # For memory usage logging
+from ultralytics import YOLO  # For YOLOv8 object detection
+import gc  # For explicit garbage collection
 
 # Load environment variables from .env file
 load_dotenv()
@@ -21,6 +24,7 @@ if not API_KEY:
 # Log in using the API key
 login(token=API_KEY)
 
+# Initialize Hugging Face Inference Client
 model_name = "HuggingFaceH4/zephyr-7b-beta"
 client = InferenceClient(model_name, token=API_KEY)
 
@@ -30,7 +34,6 @@ def askAI(prompt, temperature=0.9, max_new_tokens=500, top_p=0.95, repetition_pe
     """
     temperature = max(float(temperature), 1e-2)
     top_p = float(top_p)
-
     generate_kwargs = dict(
         temperature=temperature,
         max_new_tokens=max_new_tokens,
@@ -39,7 +42,6 @@ def askAI(prompt, temperature=0.9, max_new_tokens=500, top_p=0.95, repetition_pe
         do_sample=True,
         seed=42,
     )
-
     try:
         stream = client.text_generation(
             prompt,
@@ -50,27 +52,32 @@ def askAI(prompt, temperature=0.9, max_new_tokens=500, top_p=0.95, repetition_pe
         )
     except Exception as e:
         return f"Error calling Hugging Face API: {str(e)}"
-
     output = ""
     for response in stream:
         output += response.token.text
     return output.strip()
 
-# Load dataset
-recipes = pd.read_csv('recipe_final (1).csv')
+# Load dataset with low_memory option
+recipes = pd.read_csv('recipe_final (1).csv', low_memory=True)
 
 # Load pre-trained models using joblib with memory mapping
 RecipePredictor = load('modelRecipe.pkl', mmap_mode='r')
 scalerElement = load('scalerElement.pkl', mmap_mode='r')
 vectorizerElement = load('vectorizerElement.pkl', mmap_mode='r')
+
+# Load the vectorizer for the IngredientPredictor.
+vectorizerIngredient = load('vectorizerIngredient.pkl', mmap_mode='r')
 IngredientPredictor = load('modelIngredients.pkl', mmap_mode='r')
+
+# Load YOLOv8 model for object detection
+yolo_model = YOLO('yolov8s.pt')
 
 def change_date_format(dt):
     return re.sub(r'(\d{4})-(\d{1,2})-(\d{1,2})', r'\3/\2/\1', dt)
 
 # Configure Flask application
 app = Flask(__name__)
-app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.config["TEMPLATES_AUTO_RELOAD"] = True  # Disable in production if desired
 
 @app.after_request
 def after_request(response):
@@ -79,11 +86,13 @@ def after_request(response):
     response.headers["Expires"] = 0
     response.headers["Pragma"] = "no-cache"
     
-    # Check and print current memory usage in MB to the console
+    # Log current memory usage in MB
     process = psutil.Process(os.getpid())
     mem_usage_mb = process.memory_info().rss / (1024 * 1024)
     print("Current memory usage: {:.2f} MB".format(mem_usage_mb))
     
+    # Force garbage collection to free unused memory
+    gc.collect()
     return response
 
 def predict(input_data):
@@ -92,19 +101,23 @@ def predict(input_data):
     and vectorizes the features, then returns recommended recipes.
     """
     try:
-        # Prepare numerical features
         feature_names = ['calories', 'fat', 'carbohydrates', 'protein', 'cholesterol', 'sodium', 'fiber']
         numeric_features = pd.DataFrame([input_data[:7]], columns=feature_names)
-        scaled_input = scalerElement.transform(numeric_features)
+        # Cast numerical features to float16 for lower memory usage if acceptable by your model
+        scaled_input = scalerElement.transform(numeric_features).astype(np.float16)
         
-        # Process ingredient features using TF-IDF and scale with a weight
         ingredient_weight = 1000.0
+        # Transform ingredient text and convert to dense float16 array
         input_ing_trans = vectorizerElement.transform([input_data[7]]) * ingredient_weight
+        input_ing_dense = input_ing_trans.toarray().astype(np.float16)
         
-        # Combine features and retrieve recommendations
-        combined_inputs = np.hstack([scaled_input, input_ing_trans.toarray()])
+        combined_inputs = np.hstack([scaled_input, input_ing_dense])
         distance, indexes = RecipePredictor.kneighbors(combined_inputs)
         recoms = recipes.iloc[indexes[0]]
+        
+        # Free temporary arrays
+        del numeric_features, scaled_input, input_ing_trans, input_ing_dense, combined_inputs
+        gc.collect()
         
         return recoms[['recipe_name', 'ingredients_list', 'image_url', 'aver_rate', 'review_nums', 
                        'calories', 'fat', 'carbohydrates', 'protein', 'cholesterol', 'sodium', 'fiber']].to_dict(orient='records')
@@ -122,7 +135,6 @@ def ai_model():
         if not data:
             return jsonify({"error": "No data provided"}), 400
 
-        # Convert nutritional fields to float
         try:
             calories = float(data.get("calories", 0))
             fat = float(data.get("fat", 0))
@@ -134,39 +146,32 @@ def ai_model():
         except Exception as e:
             return jsonify({"error": f"Invalid nutritional value: {e}"}), 400
 
-        # Process ingredients (expected as a list)
         ingredients_list = data.get("ingredients", [])
         if not isinstance(ingredients_list, list):
             return jsonify({"error": "Ingredients must be a list"}), 400
+        ingredients_str = ", ".join(ing.strip() for ing in ingredients_list if ing.strip())
 
-        ingredients_str = ", ".join(ing.strip() for ing in ingredients_list if ing.strip() != "")
-
-        # Build input for the predictor
         input_data = [calories, fat, carbohydrates, protein, cholesterol, sodium, fiber, ingredients_str]
         result = predict(input_data)
         if isinstance(result, dict) and result.get("error"):
             return jsonify({"error": result["error"]}), 500
 
-        # Select the first recommended recipe
         selected_recipe = result[0]
         recipe_name = selected_recipe['recipe_name']
         ingr_str = selected_recipe['ingredients_list']
 
-        # Build a prompt to generate recipe instructions
         prompt = (
             f"You are a professional chef and recipe generator. Create a detailed recipe for one serving using the information below.\n\n"
             f"Recipe Name: {recipe_name}\n"
             f"Ingredients: {ingr_str}\n\n"
             "Instructions: Provide step-by-step instructions to prepare the recipe. Each instruction must be numbered (e.g. '1. ...', '2. ...') with no extra text before or after the numbered list. Ensure that the instructions reference the given ingredients appropriately."
         )
-
         instructions = askAI(prompt)
         numbered_steps = "\n".join(re.findall(r'\d+\.\s*.*', instructions))
         if numbered_steps:
             instructions = numbered_steps
 
         selected_recipe['instructions'] = instructions
-
         return jsonify({"result": selected_recipe})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -175,20 +180,63 @@ def ai_model():
 def ai_model_ingredients():
     """
     Expects a JSON payload with a "recipeName" key.
-    Uses the IngredientPredictor to predict ingredients from the recipe name.
+    Uses the IngredientPredictor (a NearestNeighbors model) to return recommendations.
     """
     try:
         data = request.get_json()
         if not data:
             return jsonify({"error": "No data provided"}), 400
-
         recipe_name = data.get("recipeName")
         if not recipe_name:
             return jsonify({"error": "No recipe name provided"}), 400
 
-        # Use the IngredientPredictor model (assumed to have a .predict() method) for testing
-        prediction = IngredientPredictor.predict([recipe_name])
-        return jsonify({"result": prediction})
+        # Vectorize the recipe name using the vectorizer for ingredient queries.
+        query_vec = vectorizerIngredient.transform([recipe_name])
+        distances, indexes = IngredientPredictor.kneighbors(query_vec)
+        
+        recommended = recipes.iloc[indexes[0]][['recipe_name', 'ingredients_list']].to_dict(orient='records')
+        return jsonify({"result": recommended})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/detect-ingredients", methods=["POST"])
+def detect_ingredients():
+    """
+    Expects a JSON payload with a Base64-encoded image under the key "image".
+    Runs YOLOv8 inference to detect objects in the image and returns a list of unique object names,
+    which are considered the detected ingredients. The image is compressed to lower memory usage.
+    """
+    try:
+        data = request.get_json()
+        if not data or "image" not in data:
+            return jsonify({"error": "No image provided in JSON with key 'image'"}), 400
+
+        image_b64 = data["image"]
+        image_bytes = base64.b64decode(image_b64)
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if img is None:
+            return jsonify({"error": "Failed to decode image"}), 400
+
+        # Compress the image by resizing if its largest dimension exceeds a threshold (e.g., 800 pixels)
+        max_dimension = 800
+        height, width = img.shape[:2]
+        if max(height, width) > max_dimension:
+            scaling_factor = max_dimension / float(max(height, width))
+            new_size = (int(width * scaling_factor), int(height * scaling_factor))
+            img = cv2.resize(img, new_size, interpolation=cv2.INTER_AREA)
+        
+        # Run YOLOv8 inference on the compressed image
+        results = yolo_model(source=img, conf=0.4, show=False)
+        boxes_data = results[0].boxes.data.cpu().numpy().tolist()
+        detected_objects = [yolo_model.names[int(box[-1])] for box in boxes_data]
+        unique_objects = list(set(detected_objects))
+        
+        # Free the image from memory explicitly
+        del img, nparr, image_bytes
+        gc.collect()
+        
+        return jsonify({"ingredients": unique_objects})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
