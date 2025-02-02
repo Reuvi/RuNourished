@@ -57,13 +57,19 @@ def askAI(prompt, temperature=0.9, max_new_tokens=500, top_p=0.95, repetition_pe
         output += response.token.text
     return output.strip()
 
-# Load dataset
-recipes = pd.read_csv('recipe_final (1).csv')
+# Load dataset with low_memory option (further dtype optimization can be applied if known)
+recipes = pd.read_csv('recipe_final (1).csv', low_memory=True)
 
 # Load pre-trained models using joblib with memory mapping
 RecipePredictor = load('modelRecipe.pkl', mmap_mode='r')
 scalerElement = load('scalerElement.pkl', mmap_mode='r')
 vectorizerElement = load('vectorizerElement.pkl', mmap_mode='r')
+
+# **NEW:** Load the vectorizer for the IngredientPredictor.
+# This vectorizer is assumed to have been saved during the training of the IngredientPredictor.
+vectorizerIngredient = load('vectorizerIngredient.pkl', mmap_mode='r')
+
+# IngredientPredictor is assumed to be a NearestNeighbors model for ingredients.
 IngredientPredictor = load('modelIngredients.pkl', mmap_mode='r')
 
 # Load YOLOv8 model for object detection
@@ -100,12 +106,15 @@ def predict(input_data):
     try:
         feature_names = ['calories', 'fat', 'carbohydrates', 'protein', 'cholesterol', 'sodium', 'fiber']
         numeric_features = pd.DataFrame([input_data[:7]], columns=feature_names)
-        scaled_input = scalerElement.transform(numeric_features)
+        # Cast numerical features to float32 for lower memory usage
+        scaled_input = scalerElement.transform(numeric_features).astype(np.float32)
         
         ingredient_weight = 1000.0
+        # Transform ingredient text and convert to dense float32 array
         input_ing_trans = vectorizerElement.transform([input_data[7]]) * ingredient_weight
+        input_ing_dense = input_ing_trans.toarray().astype(np.float32)
         
-        combined_inputs = np.hstack([scaled_input, input_ing_trans.toarray()])
+        combined_inputs = np.hstack([scaled_input, input_ing_dense])
         distance, indexes = RecipePredictor.kneighbors(combined_inputs)
         recoms = recipes.iloc[indexes[0]]
         
@@ -170,7 +179,8 @@ def ai_model():
 def ai_model_ingredients():
     """
     Expects a JSON payload with a "recipeName" key.
-    Uses the IngredientPredictor to predict ingredients from the recipe name.
+    Uses the IngredientPredictor (a NearestNeighbors model) to return recommendations.
+    This endpoint now uses the correct vectorizer (vectorizerIngredient) to produce the expected feature size.
     """
     try:
         data = request.get_json()
@@ -179,8 +189,14 @@ def ai_model_ingredients():
         recipe_name = data.get("recipeName")
         if not recipe_name:
             return jsonify({"error": "No recipe name provided"}), 400
-        prediction = IngredientPredictor.predict([recipe_name])
-        return jsonify({"result": prediction})
+
+        # Vectorize the recipe name using the vectorizer for ingredient queries.
+        query_vec = vectorizerIngredient.transform([recipe_name])
+        distances, indexes = IngredientPredictor.kneighbors(query_vec)
+        
+        # For demonstration, use the recipes dataframe to return recommended recipes.
+        recommended = recipes.iloc[indexes[0]][['recipe_name', 'ingredients_list']].to_dict(orient='records')
+        return jsonify({"result": recommended})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -204,7 +220,6 @@ def detect_ingredients():
             return jsonify({"error": "Failed to decode image"}), 400
 
         results = yolo_model(source=img, conf=0.4, show=False)
-
         boxes_data = results[0].boxes.data.cpu().numpy().tolist()
         detected_objects = [yolo_model.names[int(box[-1])] for box in boxes_data]
         unique_objects = list(set(detected_objects))

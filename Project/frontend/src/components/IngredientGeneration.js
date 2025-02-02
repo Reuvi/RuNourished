@@ -43,7 +43,9 @@ function IngredientGeneration() {
           jwt: getCookie("jwt"),
         });
         console.log("Response from AI model (text):", response.data);
-        navigate("/ingredient", { state: { ingredient: response.data.ingredient.result } });
+        // Assuming backend returns: { message: "AI Success", data: { result: [ ... ] } }
+        const firstResult = response.data.data.ingredient.result[0];
+        navigate("/ingredient", { state: { ingredient: firstResult } });
       } else if (activeTab === "image") {
         // Post using image upload
         const formData = new FormData();
@@ -56,7 +58,8 @@ function IngredientGeneration() {
           },
         });
         console.log("Response from AI model (image):", response.data);
-        navigate("/ingredient", { state: { ingredient: response.data.ingredient.result } });
+        const firstResult = response.data.data.result[0];
+        navigate("/ingredient", { state: { ingredient: firstResult } });
       }
     } catch (error) {
       console.error("Error posting data:", error);
@@ -68,7 +71,9 @@ function IngredientGeneration() {
     return (
       <div className="h-full flex flex-col items-center justify-center bg-custom">
         <div className="w-24 h-24 border-t-4 border-blue-500 border-solid rounded-full animate-spin"></div>
-        <p className="mt-4 text-2xl text-darkerPurple">Generating your ingredient...</p>
+        <p className="mt-4 text-2xl text-darkerPurple">
+          Generating your ingredient...
+        </p>
       </div>
     );
   }
