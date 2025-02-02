@@ -3,30 +3,33 @@ const Recipe = require("../../models/Recipe");
 const jwtt = require('jsonwebtoken');
 
 
-const recipe_save = async (recipe, jwt) => {
-    
-    response = {
+
+const recipe_cookbook = async (jwt) => {
+    const response = {
         message: "",
         success: false,
-    }
+        data: ""
+    };
 
     try {
         user_data = jwtt.decode(JSON.parse(jwt));
 
-        const rec = new Recipe({ recipe: JSON.stringify(recipe), user_id: user_data.userId });
-        await rec.save();
+        const rec = Recipe.find({user_id: user_data.userId});
+        
+        response.data = rec;
 
+        console.log(console.data);
+        
         response.message = "Succesfully saved";
         response.success = true;
 
         return response;
 
-    } catch(err) {
-        response.message = "Internal Error";
+    }catch(err) {
         console.log(err);
-        
-        return response
+        response.message = "Internal Error";
+        return response;
     }
 }
 
-module.exports = { recipe_save };
+module.exports = { recipe_cookbook };

@@ -120,7 +120,7 @@ const RecipeDetails = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const response = await api.post("/v1/recipes/save", {
+      const response = await api.post("/v1/profile/recipes/save", {
         recipe: currentRecipe,
         jwt: getCookie("jwt"),
       });

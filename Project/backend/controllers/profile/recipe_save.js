@@ -2,12 +2,15 @@ const { recipe_save } = require("../../services/profile/recipe_save");
 
 
 module.exports = async (req, res) => {
-    response = await recipe_save();
+    
+    const  {recipe, jwt} = req.body;
+    
+    response = await recipe_save(recipe, jwt);
 
     if (response.success) {
-        //do something
+        res.status(201).json({message: response.message})
     }else {
-        //do something
+        res.status(401).json({message: response.message})
     }
 }
 
