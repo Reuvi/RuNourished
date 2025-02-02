@@ -7,7 +7,7 @@ const HomePage = () => {
       name: 'Oluwatomisin Abiola',
       role: 'Team Member',
       image: '/images/tomisin.webp',
-      github: '#',
+      github: 'https://github.com/oluwatomisinabiola',
       linkedin: 'https://www.linkedin.com/in/oluwatomisin-abiola'
     },
     {
@@ -21,8 +21,8 @@ const HomePage = () => {
       name: 'Krish Kuber',
       role: 'Team Member',
       image: '/images/krish.jpg',
-      github: '#',
-      linkedin: '#'
+      github: 'https://github.com/KrishKuber',
+      linkedin: 'https://www.linkedin.com/in/krish-kuber-324a932a1'
     },
     {
       name: 'Ikey Sasson',
