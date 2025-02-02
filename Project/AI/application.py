@@ -57,7 +57,7 @@ def askAI(prompt, temperature=0.9, max_new_tokens=500, top_p=0.95, repetition_pe
         output += response.token.text
     return output.strip()
 
-# Load dataset with low_memory option (further dtype optimization can be applied if known)
+# Load dataset with low_memory option
 recipes = pd.read_csv('recipe_final (1).csv', low_memory=True)
 
 # Load pre-trained models using joblib with memory mapping
@@ -65,11 +65,8 @@ RecipePredictor = load('modelRecipe.pkl', mmap_mode='r')
 scalerElement = load('scalerElement.pkl', mmap_mode='r')
 vectorizerElement = load('vectorizerElement.pkl', mmap_mode='r')
 
-# **NEW:** Load the vectorizer for the IngredientPredictor.
-# This vectorizer is assumed to have been saved during the training of the IngredientPredictor.
+# Load the vectorizer for the IngredientPredictor.
 vectorizerIngredient = load('vectorizerIngredient.pkl', mmap_mode='r')
-
-# IngredientPredictor is assumed to be a NearestNeighbors model for ingredients.
 IngredientPredictor = load('modelIngredients.pkl', mmap_mode='r')
 
 # Load YOLOv8 model for object detection
@@ -106,17 +103,21 @@ def predict(input_data):
     try:
         feature_names = ['calories', 'fat', 'carbohydrates', 'protein', 'cholesterol', 'sodium', 'fiber']
         numeric_features = pd.DataFrame([input_data[:7]], columns=feature_names)
-        # Cast numerical features to float32 for lower memory usage
-        scaled_input = scalerElement.transform(numeric_features).astype(np.float32)
+        # Cast numerical features to float16 for lower memory usage if acceptable by your model
+        scaled_input = scalerElement.transform(numeric_features).astype(np.float16)
         
         ingredient_weight = 1000.0
-        # Transform ingredient text and convert to dense float32 array
+        # Transform ingredient text and convert to dense float16 array
         input_ing_trans = vectorizerElement.transform([input_data[7]]) * ingredient_weight
-        input_ing_dense = input_ing_trans.toarray().astype(np.float32)
+        input_ing_dense = input_ing_trans.toarray().astype(np.float16)
         
         combined_inputs = np.hstack([scaled_input, input_ing_dense])
         distance, indexes = RecipePredictor.kneighbors(combined_inputs)
         recoms = recipes.iloc[indexes[0]]
+        
+        # Free temporary arrays
+        del numeric_features, scaled_input, input_ing_trans, input_ing_dense, combined_inputs
+        gc.collect()
         
         return recoms[['recipe_name', 'ingredients_list', 'image_url', 'aver_rate', 'review_nums', 
                        'calories', 'fat', 'carbohydrates', 'protein', 'cholesterol', 'sodium', 'fiber']].to_dict(orient='records')
@@ -180,7 +181,6 @@ def ai_model_ingredients():
     """
     Expects a JSON payload with a "recipeName" key.
     Uses the IngredientPredictor (a NearestNeighbors model) to return recommendations.
-    This endpoint now uses the correct vectorizer (vectorizerIngredient) to produce the expected feature size.
     """
     try:
         data = request.get_json()
@@ -194,7 +194,6 @@ def ai_model_ingredients():
         query_vec = vectorizerIngredient.transform([recipe_name])
         distances, indexes = IngredientPredictor.kneighbors(query_vec)
         
-        # For demonstration, use the recipes dataframe to return recommended recipes.
         recommended = recipes.iloc[indexes[0]][['recipe_name', 'ingredients_list']].to_dict(orient='records')
         return jsonify({"result": recommended})
     except Exception as e:
@@ -205,7 +204,7 @@ def detect_ingredients():
     """
     Expects a JSON payload with a Base64-encoded image under the key "image".
     Runs YOLOv8 inference to detect objects in the image and returns a list of unique object names,
-    which are considered the detected ingredients.
+    which are considered the detected ingredients. The image is compressed to lower memory usage.
     """
     try:
         data = request.get_json()
@@ -219,10 +218,24 @@ def detect_ingredients():
         if img is None:
             return jsonify({"error": "Failed to decode image"}), 400
 
+        # Compress the image by resizing if its largest dimension exceeds a threshold (e.g., 800 pixels)
+        max_dimension = 800
+        height, width = img.shape[:2]
+        if max(height, width) > max_dimension:
+            scaling_factor = max_dimension / float(max(height, width))
+            new_size = (int(width * scaling_factor), int(height * scaling_factor))
+            img = cv2.resize(img, new_size, interpolation=cv2.INTER_AREA)
+        
+        # Run YOLOv8 inference on the compressed image
         results = yolo_model(source=img, conf=0.4, show=False)
         boxes_data = results[0].boxes.data.cpu().numpy().tolist()
         detected_objects = [yolo_model.names[int(box[-1])] for box in boxes_data]
         unique_objects = list(set(detected_objects))
+        
+        # Free the image from memory explicitly
+        del img, nparr, image_bytes
+        gc.collect()
+        
         return jsonify({"ingredients": unique_objects})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

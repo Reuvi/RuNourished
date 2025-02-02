@@ -70,8 +70,28 @@ function IngredientGeneration() {
           jwt: getCookie("jwt"),
         });
         console.log("Response from AI model (image):", response.data);
-        const firstResult = response.data.data.ingredient.result[0];
-        navigate("/ingredient", { state: { ingredient: firstResult } });
+
+        // Check the structure of the returned data and adjust accordingly
+        let ingredientData;
+        if (response.data.data.ingredient.result) {
+          // In case the backend uses a "result" property (similar to text)
+          ingredientData = response.data.data.ingredient.result[0];
+        } else if (response.data.data.ingredient.ingredients) {
+          // When the backend returns ingredients directly in an "ingredients" array
+          // You can further process or format this data if needed.
+          ingredientData = {
+            ...response.data.data.ingredient,
+            // Create a comma-separated list for the details page if needed
+            ingredients_list: response.data.data.ingredient.ingredients.join(", "),
+          };
+        } else {
+          // Fallback: use the whole ingredient object
+          ingredientData = response.data.data.ingredient;
+        }
+
+        // Create a preview URL for the uploaded image
+        const imagePreviewUrl = selectedImage ? URL.createObjectURL(selectedImage) : null;
+        navigate("/ingredient", { state: { ingredient: ingredientData, image: imagePreviewUrl } });
       }
     } catch (error) {
       console.error("Error posting data:", error);

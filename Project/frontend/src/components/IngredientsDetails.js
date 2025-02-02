@@ -3,8 +3,9 @@ import { useLocation, Link } from "react-router-dom";
 
 const IngredientDetails = () => {
   const location = useLocation();
-  // Expect the ingredient data to be passed in location.state.ingredient
+  // Expect the ingredient data and image URL to be passed in location.state
   const ingredientData = location.state?.ingredient;
+  const imageUrl = location.state?.image;
 
   if (!ingredientData) {
     return (
@@ -18,7 +19,9 @@ const IngredientDetails = () => {
   }
 
   // If ingredientData is an array, take the first element; otherwise, use it directly.
-  const details = Array.isArray(ingredientData) ? ingredientData[0] : ingredientData;
+  const details = Array.isArray(ingredientData)
+    ? ingredientData[0]
+    : ingredientData;
 
   // Process the ingredients list: try JSON parsing first, then fallback to splitting by commas.
   const ingredientsStr = details.ingredients_list || "";
@@ -41,8 +44,17 @@ const IngredientDetails = () => {
   return (
     <div className="min-h-screen bg-custom flex items-center justify-center p-8">
       <div className="max-w-3xl w-full bg-white bg-opacity-80 backdrop-blur-md rounded-lg shadow-xl p-8">
+        {imageUrl && (
+          <div className="flex justify-center mb-6">
+            <img
+              src={imageUrl}
+              alt="Uploaded preview"
+              className="max-h-64 object-contain rounded"
+            />
+          </div>
+        )}
         <h1 className="text-4xl font-bold mb-6 text-center">
-          {details.recipe_name}
+          {details.recipe_name || "Generated Ingredient"}
         </h1>
         <div className="mb-6">
           <h2 className="text-2xl font-semibold mb-2 border-b pb-1">
