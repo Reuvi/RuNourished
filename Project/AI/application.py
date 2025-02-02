@@ -4,16 +4,12 @@ import pickle
 from flask import Flask, request, jsonify
 import pandas as pd
 import numpy as np
-from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
 from huggingface_hub import InferenceClient, login
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, pipeline, AutoConfig
-import requests
-import json
-import gradio as gr
+from joblib import load  # Use joblib for memory mapping
 from dotenv import load_dotenv
+import psutil  # For memory usage checks
 
 # Load environment variables from .env file
 load_dotenv()
@@ -22,7 +18,7 @@ API_KEY = os.environ.get("API_KEY")
 if not API_KEY:
     raise Exception("Hugging Face API Key not found. Please set the API_KEY environment variable in your .env file.")
 
-# Log in using the API key (suitable for non-notebook environments)
+# Log in using the API key
 login(token=API_KEY)
 
 model_name = "HuggingFaceH4/zephyr-7b-beta"
@@ -32,9 +28,7 @@ def askAI(prompt, temperature=0.9, max_new_tokens=500, top_p=0.95, repetition_pe
     """
     Sends a text-generation prompt to the Hugging Face Inference API and returns the generated text.
     """
-    temperature = float(temperature)
-    if temperature < 1e-2:
-        temperature = 1e-2
+    temperature = max(float(temperature), 1e-2)
     top_p = float(top_p)
 
     generate_kwargs = dict(
@@ -65,15 +59,11 @@ def askAI(prompt, temperature=0.9, max_new_tokens=500, top_p=0.95, repetition_pe
 # Load dataset
 recipes = pd.read_csv('recipe_final (1).csv')
 
-# Load pre-trained models / transformers
-with open('modelRecipe.pkl', 'rb') as f:
-    RecipePredictor = pickle.load(f)
-
-with open('scalerElement.pkl', 'rb') as f:
-    scalerElement = pickle.load(f)
-
-with open('vectorizerElement.pkl', 'rb') as f:
-    vectorizerElement = pickle.load(f)
+# Load pre-trained models using joblib with memory mapping
+RecipePredictor = load('modelRecipe.pkl', mmap_mode='r')
+scalerElement = load('scalerElement.pkl', mmap_mode='r')
+vectorizerElement = load('vectorizerElement.pkl', mmap_mode='r')
+IngredientPredictor = load('modelIngredients.pkl', mmap_mode='r')
 
 def change_date_format(dt):
     return re.sub(r'(\d{4})-(\d{1,2})-(\d{1,2})', r'\3/\2/\1', dt)
@@ -84,28 +74,38 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 @app.after_request
 def after_request(response):
+    # Set no-cache headers
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response.headers["Expires"] = 0
     response.headers["Pragma"] = "no-cache"
+    
+    # Check and print current memory usage in MB to the console
+    process = psutil.Process(os.getpid())
+    mem_usage_mb = process.memory_info().rss / (1024 * 1024)
+    print("Current memory usage: {:.2f} MB".format(mem_usage_mb))
+    
     return response
 
 def predict(input_data):
+    """
+    Given an input array (numerical nutritional values and ingredients string), scales
+    and vectorizes the features, then returns recommended recipes.
+    """
     try:
-        # Create a DataFrame for numerical features with the correct column names
+        # Prepare numerical features
         feature_names = ['calories', 'fat', 'carbohydrates', 'protein', 'cholesterol', 'sodium', 'fiber']
         numeric_features = pd.DataFrame([input_data[:7]], columns=feature_names)
         scaled_input = scalerElement.transform(numeric_features)
         
-        # Multiply the ingredient TF-IDF features by the same weight as during training.
-        ingredient_weight = 1000.0  # Adjust this value if needed
+        # Process ingredient features using TF-IDF and scale with a weight
+        ingredient_weight = 1000.0
         input_ing_trans = vectorizerElement.transform([input_data[7]]) * ingredient_weight
         
-        # Combine the numerical and ingredient features
+        # Combine features and retrieve recommendations
         combined_inputs = np.hstack([scaled_input, input_ing_trans.toarray()])
-        
-        # Get recommendations using the pre-trained predictor
         distance, indexes = RecipePredictor.kneighbors(combined_inputs)
         recoms = recipes.iloc[indexes[0]]
+        
         return recoms[['recipe_name', 'ingredients_list', 'image_url', 'aver_rate', 'review_nums', 
                        'calories', 'fat', 'carbohydrates', 'protein', 'cholesterol', 'sodium', 'fiber']].to_dict(orient='records')
     except Exception as e:
@@ -113,6 +113,10 @@ def predict(input_data):
 
 @app.route("/ai-model", methods=["POST"])
 def ai_model():
+    """
+    Expects a JSON payload with nutritional values and a list of ingredients.
+    Returns a recommended recipe with generated instructions.
+    """
     try:
         data = request.get_json()
         if not data:
@@ -130,27 +134,25 @@ def ai_model():
         except Exception as e:
             return jsonify({"error": f"Invalid nutritional value: {e}"}), 400
 
-        # Process ingredients: expect a list of ingredients
+        # Process ingredients (expected as a list)
         ingredients_list = data.get("ingredients", [])
         if not isinstance(ingredients_list, list):
             return jsonify({"error": "Ingredients must be a list"}), 400
 
-        # Join ingredients into a comma-separated string
         ingredients_str = ", ".join(ing.strip() for ing in ingredients_list if ing.strip() != "")
 
-        # Create the input array for the predictor
+        # Build input for the predictor
         input_data = [calories, fat, carbohydrates, protein, cholesterol, sodium, fiber, ingredients_str]
-
         result = predict(input_data)
         if isinstance(result, dict) and result.get("error"):
             return jsonify({"error": result["error"]}), 500
 
-        # Select the first recommended recipe details
+        # Select the first recommended recipe
         selected_recipe = result[0]
         recipe_name = selected_recipe['recipe_name']
         ingr_str = selected_recipe['ingredients_list']
 
-        # Build a prompt to generate numbered recipe instructions that incorporate the provided ingredients
+        # Build a prompt to generate recipe instructions
         prompt = (
             f"You are a professional chef and recipe generator. Create a detailed recipe for one serving using the information below.\n\n"
             f"Recipe Name: {recipe_name}\n"
@@ -158,17 +160,35 @@ def ai_model():
             "Instructions: Provide step-by-step instructions to prepare the recipe. Each instruction must be numbered (e.g. '1. ...', '2. ...') with no extra text before or after the numbered list. Ensure that the instructions reference the given ingredients appropriately."
         )
 
-        # Generate instructions using askAI
         instructions = askAI(prompt)
         numbered_steps = "\n".join(re.findall(r'\d+\.\s*.*', instructions))
         if numbered_steps:
             instructions = numbered_steps
 
-        # Add generated instructions to the selected recipe
         selected_recipe['instructions'] = instructions
 
-        # Return everything as JSON
         return jsonify({"result": selected_recipe})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/ai-model-ingredients", methods=["POST"])
+def ai_model_ingredients():
+    """
+    Expects a JSON payload with a "recipeName" key.
+    Uses the IngredientPredictor to predict ingredients from the recipe name.
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+
+        recipe_name = data.get("recipeName")
+        if not recipe_name:
+            return jsonify({"error": "No recipe name provided"}), 400
+
+        # Use the IngredientPredictor model (assumed to have a .predict() method) for testing
+        prediction = IngredientPredictor.predict([recipe_name])
+        return jsonify({"result": prediction})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
