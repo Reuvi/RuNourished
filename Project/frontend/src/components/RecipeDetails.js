@@ -31,61 +31,8 @@ const RecipeDetails = () => {
     return null;
   }
 
-  // Regenerate recipe.
-  const handleRegenerate = async () => {
-    setLoading(true);
-    try {
-      const maxAttempts = 10;
-      let attempts = 0;
-      let newRecipe = currentRecipe;
-      while (attempts < maxAttempts) {
-        const randomizedData = {
-          calories: Math.floor(
-            Math.random() * parseFloat(currentRecipe.calories)
-          ),
-          fat: Math.floor(Math.random() * parseFloat(currentRecipe.fat)),
-          carbohydrates: Math.floor(
-            Math.random() * parseFloat(currentRecipe.carbohydrates)
-          ),
-          protein: currentRecipe.protein, // no randomization
-          cholesterol: Math.floor(
-            Math.random() * parseFloat(currentRecipe.cholesterol)
-          ),
-          sodium: Math.floor(Math.random() * parseFloat(currentRecipe.sodium)),
-          fiber: Math.floor(Math.random() * parseFloat(currentRecipe.fiber)),
-        };
-
-        // Safely process ingredients_list.
-        const ingredientsStr = currentRecipe.ingredients_list || "";
-        let rawIngredients = [];
-        try {
-          rawIngredients = JSON.parse(ingredientsStr);
-          if (!Array.isArray(rawIngredients)) {
-            rawIngredients = ingredientsStr.split(",").map(item => item.trim());
-          }
-        } catch (err) {
-          rawIngredients = ingredientsStr.split(",").map(item => item.trim());
-        }
-        randomizedData.ingredients = rawIngredients;
-
-        const response = await api.post("/v1/ai/get_recipe", {
-          ...randomizedData,
-          values: getCookie("values"),
-          jwt: getCookie("jwt"),
-        });
-        newRecipe = response.data.recipe.result;
-        if (newRecipe.recipe_name !== currentRecipe.recipe_name) {
-          break;
-        }
-        attempts++;
-      }
-      setCurrentRecipe(newRecipe);
-    } catch (error) {
-      console.error("Error regenerating recipe:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Removed handleRegenerate function since we no longer need it.
+  // const handleRegenerate = async () => { ... };
 
   // Save recipe (only available if not already saved).
   const handleSave = async () => {
@@ -111,24 +58,23 @@ const RecipeDetails = () => {
   try {
     rawIngredients = JSON.parse(ingredientsStr);
     if (!Array.isArray(rawIngredients)) {
-      rawIngredients = ingredientsStr.split(",").map(item => item.trim());
+      rawIngredients = ingredientsStr.split(",").map((item) => item.trim());
     }
   } catch (err) {
-    rawIngredients = ingredientsStr.split(",").map(item => item.trim());
+    rawIngredients = ingredientsStr.split(",").map((item) => item.trim());
   }
-  const ingredients = rawIngredients.map(item =>
-    item
-      .replace(/[\[\]]+/g, "")
-      .replace(/^['"]+|['"]+$/g, "")
-      .trim()
-  );
+  const ingredients = rawIngredients
+    .map((item) =>
+      item.replace(/[\[\]]+/g, "").replace(/^['"]+|['"]+$/g, "").trim()
+    )
+    .filter((item) => item !== "");
 
   // Safely process instructions.
   const instructionsStr = currentRecipe.instructions || "";
   const rawInstructions = instructionsStr
     .split("\n")
-    .filter(line => line.trim() !== "");
-  const instructions = rawInstructions.map(line =>
+    .filter((line) => line.trim() !== "");
+  const instructions = rawInstructions.map((line) =>
     line.replace(/^\s*\d+\.\s*/, "")
   );
 
@@ -137,7 +83,7 @@ const RecipeDetails = () => {
       <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-custom">
         <div className="w-24 h-24 border-t-4 border-blue-500 border-solid rounded-full animate-spin"></div>
         <p className="mt-4 text-2xl text-darkerPurple">
-          Regenerating your recipe...
+          Loading your recipe...
         </p>
       </div>
     );
@@ -158,20 +104,32 @@ const RecipeDetails = () => {
           />
         )}
 
-        {/* Stars and reviews have been removed */}
-
         <div className="mb-6">
           <h2 className="text-2xl font-semibold mb-2 border-b pb-1">
             Nutrition Facts
           </h2>
           <div className="grid grid-cols-2 gap-4 text-lg">
-            <div><strong>Calories:</strong> {currentRecipe.calories}</div>
-            <div><strong>Fat:</strong> {currentRecipe.fat} g</div>
-            <div><strong>Carbs:</strong> {currentRecipe.carbohydrates} g</div>
-            <div><strong>Protein:</strong> {currentRecipe.protein} g</div>
-            <div><strong>Cholesterol:</strong> {currentRecipe.cholesterol} mg</div>
-            <div><strong>Sodium:</strong> {currentRecipe.sodium} mg</div>
-            <div><strong>Fiber:</strong> {currentRecipe.fiber} g</div>
+            <div>
+              <strong>Calories:</strong> {currentRecipe.calories}
+            </div>
+            <div>
+              <strong>Fat:</strong> {currentRecipe.fat} g
+            </div>
+            <div>
+              <strong>Carbs:</strong> {currentRecipe.carbohydrates} g
+            </div>
+            <div>
+              <strong>Protein:</strong> {currentRecipe.protein} g
+            </div>
+            <div>
+              <strong>Cholesterol:</strong> {currentRecipe.cholesterol} mg
+            </div>
+            <div>
+              <strong>Sodium:</strong> {currentRecipe.sodium} mg
+            </div>
+            <div>
+              <strong>Fiber:</strong> {currentRecipe.fiber} g
+            </div>
           </div>
         </div>
 
@@ -197,7 +155,9 @@ const RecipeDetails = () => {
           </h2>
           <ol className="list-decimal list-inside space-y-2">
             {instructions.map((step, index) => (
-              <li key={index} className="text-lg">{step}</li>
+              <li key={index} className="text-lg">
+                {step}
+              </li>
             ))}
           </ol>
         </div>
@@ -218,25 +178,15 @@ const RecipeDetails = () => {
               Back to Generate Recipe
             </Link>
           )}
-          {/* Only show these buttons if NOT coming from the cookbook */}
-          {!fromCookbook && (
-            <>
-              <button
-                onClick={handleRegenerate}
-                className="inline-block bg-darkerPurple text-white py-2 px-4 rounded hover:bg-darkerPurple/90 transition"
-              >
-                Regenerate Recipe
-              </button>
-              {!currentRecipe.saved && (
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition"
-                >
-                  {saving ? "Saving..." : "Save Recipe"}
-                </button>
-              )}
-            </>
+          {/* Only show save button if NOT coming from the cookbook */}
+          {!fromCookbook && !currentRecipe.saved && (
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition"
+            >
+              {saving ? "Saving..." : "Save Recipe"}
+            </button>
           )}
         </div>
       </div>
