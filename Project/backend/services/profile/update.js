@@ -1,10 +1,8 @@
 require("dotenv").config();
-const validator = require('validator'); 
-const bcrypt = require("bcryptjs");
 const User = require("../../models/User");
-const jwt = require('jsonwebtoken');
+const jwtt = require('jsonwebtoken');
 
-const get_recipe = async (username, email, jwt) => {
+const update = async (username, email, jwt) => {
     response = {
         message: "",
         status: false,
@@ -18,9 +16,8 @@ const get_recipe = async (username, email, jwt) => {
     }
 
     try {
-        const old_userData = jwt.decode(jwt);
-
-        const user = await User.findOne({ email: old_userData.email });
+        const old_userData = jwtt.decode(JSON.parse(jwt));
+        const user = await User.findOne({ email: old_userData.userEmail });
 
         if (!user) {
             response.message = "Invalid credentials";
@@ -32,8 +29,8 @@ const get_recipe = async (username, email, jwt) => {
 
         await user.save();
 
-        const token = jwt.sign({ userId: user._id, userName: user.name, userEmail: user.email}, process.env.JWT_SECRET, { expiresIn: "24h" });
-        const values = jwt.decode(token);
+        const token = jwtt.sign({ userId: user._id, userName: user.name, userEmail: user.email}, process.env.JWT_SECRET, { expiresIn: "24h" });
+        const values = jwtt.decode(token);
 
         response.message = "Profile updated";
         response.success = true;
@@ -47,11 +44,6 @@ const get_recipe = async (username, email, jwt) => {
         response.message = "Internal Error";
         return response;
     }
-
-
-
-
-    
 }
 
-module.exports = { get_recipe }
+module.exports = { update }

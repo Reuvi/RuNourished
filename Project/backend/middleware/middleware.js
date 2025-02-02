@@ -1,5 +1,5 @@
 require("dotenv").config();
-const jwt = require('jsonwebtoken');
+const jwtt = require('jsonwebtoken');
 
 const customMiddleware = (req, res, next) => {
     console.log('Custom middleware for /anyRoute route');
@@ -7,11 +7,12 @@ const customMiddleware = (req, res, next) => {
   };
 
 const authorization = (req, res, next) => {
-  const {jwt, values} = req.cookies;
+  const {jwt, values} = req.body;
   try {
-    jwt.verify(jwt, process.env.JWT_SECRET);
+    jwtt.verify(JSON.parse(jwt), process.env.JWT_SECRET);
     next();
   } catch (err) {
+    console.log(err);
     response = {
       message: "Unauthorized Access",
     }

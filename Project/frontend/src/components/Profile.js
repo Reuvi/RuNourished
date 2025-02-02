@@ -1,6 +1,7 @@
 // Profile.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from "../api/api"
 
 function Profile() {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ function Profile() {
     e.preventDefault();
     try {
       // Call the login API endpoint with the email and password
-      const response = await api.post('/v1/profile/update', { username, email });
+      const response = await api.post('/v1/profile/update', { username, email, values: getCookie("values"), jwt: getCookie("jwt") }, { withCredentials: true });
       console.log(response.data.message);
 
       // Clear any previous error message

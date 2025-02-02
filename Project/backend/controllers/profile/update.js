@@ -2,9 +2,7 @@ const { update }  = require("../../services/profile/update");
 
 module.exports = async (req, res) => {
 
-    const {username, email} = req.body;
-
-    const {jwt} = req.cookies;
+    const {username, email, jwt} = req.body;
 
     const response = await update(username, email, jwt);
 
