@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Search, Heart, Filter, Github, Linkedin } from 'lucide-react';
 
 const HomePage = () => {
@@ -134,9 +135,11 @@ const HomePage = () => {
           <p className="text-lg mb-6 text-white">
             Join RU Nourished today and explore recipes tailored to your nutritional needs.
           </p>
-          <button className="bg-white text-darkerPurple px-8 py-3 rounded-full hover:bg-gray-200 transition-colors duration-300">
-            Get Started
-          </button>
+          <Link to="/recipe/generate">
+            <button className="bg-white text-darkerPurple px-8 py-3 rounded-full hover:bg-gray-200 transition-colors duration-300">
+              Get Started
+            </button>
+          </Link>
         </div>
       </section>
     </div>

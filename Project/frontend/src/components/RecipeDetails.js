@@ -1,38 +1,17 @@
 import React, { useState } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import api from "../api/api";
-
-function StarRating({ rating }) {
-  const fullStars = Math.floor(rating);
-  const emptyStars = 5 - fullStars;
-  return (
-    <div className="flex items-center space-x-1">
-      {Array(fullStars)
-        .fill(null)
-        .map((_, i) => (
-          <span key={`full-${i}`} className="text-yellow-500">
-            ★
-          </span>
-        ))}
-      {Array(emptyStars)
-        .fill(null)
-        .map((_, i) => (
-          <span key={`empty-${i}`} className="text-gray-300">
-            ★
-          </span>
-        ))}
-    </div>
-  );
-}
 
 const RecipeDetails = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const initialRecipe = location.state?.recipe;
+  // Get the flag to know if we came from the cookbook.
+  const fromCookbook = location.state?.fromCookbook;
   const [currentRecipe, setCurrentRecipe] = useState(initialRecipe);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // If no recipe is available, show an error view.
   if (!currentRecipe) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-8">
@@ -44,7 +23,7 @@ const RecipeDetails = () => {
     );
   }
 
-  // Helper function to retrieve a cookie value.
+  // Helper to get cookie value.
   function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -52,16 +31,14 @@ const RecipeDetails = () => {
     return null;
   }
 
-  // Function to regenerate the recipe.
+  // Regenerate recipe.
   const handleRegenerate = async () => {
     setLoading(true);
     try {
-      // We'll attempt to get a new recipe until it's different from the current one.
       const maxAttempts = 10;
       let attempts = 0;
       let newRecipe = currentRecipe;
       while (attempts < maxAttempts) {
-        // Build the randomized nutritional data using the current recipe's values.
         const randomizedData = {
           calories: Math.floor(
             Math.random() * parseFloat(currentRecipe.calories)
@@ -70,7 +47,7 @@ const RecipeDetails = () => {
           carbohydrates: Math.floor(
             Math.random() * parseFloat(currentRecipe.carbohydrates)
           ),
-          protein: currentRecipe.protein, // no randomization for protein
+          protein: currentRecipe.protein, // no randomization
           cholesterol: Math.floor(
             Math.random() * parseFloat(currentRecipe.cholesterol)
           ),
@@ -78,31 +55,25 @@ const RecipeDetails = () => {
           fiber: Math.floor(Math.random() * parseFloat(currentRecipe.fiber)),
         };
 
-        // Extract ingredients from the current recipe.
+        // Safely process ingredients_list.
+        const ingredientsStr = currentRecipe.ingredients_list || "";
         let rawIngredients = [];
         try {
-          rawIngredients = JSON.parse(currentRecipe.ingredients_list);
+          rawIngredients = JSON.parse(ingredientsStr);
           if (!Array.isArray(rawIngredients)) {
-            rawIngredients = currentRecipe.ingredients_list
-              .split(",")
-              .map((item) => item.trim());
+            rawIngredients = ingredientsStr.split(",").map(item => item.trim());
           }
         } catch (err) {
-          rawIngredients = currentRecipe.ingredients_list
-            .split(",")
-            .map((item) => item.trim());
+          rawIngredients = ingredientsStr.split(",").map(item => item.trim());
         }
         randomizedData.ingredients = rawIngredients;
 
-        // Make the API call to get a new recipe.
         const response = await api.post("/v1/ai/get_recipe", {
           ...randomizedData,
           values: getCookie("values"),
           jwt: getCookie("jwt"),
         });
         newRecipe = response.data.recipe.result;
-
-        // If the new recipe's name differs from the current one, exit the loop.
         if (newRecipe.recipe_name !== currentRecipe.recipe_name) {
           break;
         }
@@ -116,7 +87,7 @@ const RecipeDetails = () => {
     }
   };
 
-  // Function to save the current recipe.
+  // Save recipe (only available if not already saved).
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -125,7 +96,8 @@ const RecipeDetails = () => {
         jwt: getCookie("jwt"),
       });
       console.log("Recipe saved successfully:", response.data);
-      // Optionally display a success message or toast notification here.
+      // After saving, navigate back to the cookbook.
+      navigate("/cookbook");
     } catch (error) {
       console.error("Error saving recipe:", error);
     } finally {
@@ -133,36 +105,33 @@ const RecipeDetails = () => {
     }
   };
 
-  // Process the ingredients so they display nicely.
+  // Safely process ingredients.
+  const ingredientsStr = currentRecipe.ingredients_list || "";
   let rawIngredients = [];
   try {
-    rawIngredients = JSON.parse(currentRecipe.ingredients_list);
+    rawIngredients = JSON.parse(ingredientsStr);
     if (!Array.isArray(rawIngredients)) {
-      rawIngredients = currentRecipe.ingredients_list
-        .split(",")
-        .map((item) => item.trim());
+      rawIngredients = ingredientsStr.split(",").map(item => item.trim());
     }
   } catch (err) {
-    rawIngredients = currentRecipe.ingredients_list
-      .split(",")
-      .map((item) => item.trim());
+    rawIngredients = ingredientsStr.split(",").map(item => item.trim());
   }
-  const ingredients = rawIngredients.map((item) =>
+  const ingredients = rawIngredients.map(item =>
     item
       .replace(/[\[\]]+/g, "")
       .replace(/^['"]+|['"]+$/g, "")
       .trim()
   );
 
-  // Process the instructions by stripping any existing numbering.
-  const rawInstructions = currentRecipe.instructions
+  // Safely process instructions.
+  const instructionsStr = currentRecipe.instructions || "";
+  const rawInstructions = instructionsStr
     .split("\n")
-    .filter((line) => line.trim() !== "");
-  const instructions = rawInstructions.map((line) =>
+    .filter(line => line.trim() !== "");
+  const instructions = rawInstructions.map(line =>
     line.replace(/^\s*\d+\.\s*/, "")
   );
 
-  // Show a loading skeleton when regenerating.
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-custom">
@@ -181,7 +150,6 @@ const RecipeDetails = () => {
           {currentRecipe.recipe_name}
         </h1>
 
-        {/* Image */}
         {currentRecipe.image_url && (
           <img
             src={currentRecipe.image_url}
@@ -190,47 +158,23 @@ const RecipeDetails = () => {
           />
         )}
 
-        {/* Ratings & Reviews */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-          <div className="flex items-center space-x-2">
-            <StarRating rating={parseFloat(currentRecipe.aver_rate)} />
-            <span className="text-sm text-gray-600">
-              {currentRecipe.review_nums} reviews
-            </span>
-          </div>
-        </div>
+        {/* Stars and reviews have been removed */}
 
-        {/* Nutritional Info */}
         <div className="mb-6">
           <h2 className="text-2xl font-semibold mb-2 border-b pb-1">
             Nutrition Facts
           </h2>
           <div className="grid grid-cols-2 gap-4 text-lg">
-            <div>
-              <strong>Calories:</strong> {currentRecipe.calories}
-            </div>
-            <div>
-              <strong>Fat:</strong> {currentRecipe.fat} g
-            </div>
-            <div>
-              <strong>Carbs:</strong> {currentRecipe.carbohydrates} g
-            </div>
-            <div>
-              <strong>Protein:</strong> {currentRecipe.protein} g
-            </div>
-            <div>
-              <strong>Cholesterol:</strong> {currentRecipe.cholesterol} mg
-            </div>
-            <div>
-              <strong>Sodium:</strong> {currentRecipe.sodium} mg
-            </div>
-            <div>
-              <strong>Fiber:</strong> {currentRecipe.fiber} g
-            </div>
+            <div><strong>Calories:</strong> {currentRecipe.calories}</div>
+            <div><strong>Fat:</strong> {currentRecipe.fat} g</div>
+            <div><strong>Carbs:</strong> {currentRecipe.carbohydrates} g</div>
+            <div><strong>Protein:</strong> {currentRecipe.protein} g</div>
+            <div><strong>Cholesterol:</strong> {currentRecipe.cholesterol} mg</div>
+            <div><strong>Sodium:</strong> {currentRecipe.sodium} mg</div>
+            <div><strong>Fiber:</strong> {currentRecipe.fiber} g</div>
           </div>
         </div>
 
-        {/* Ingredients */}
         <div className="mb-6">
           <h2 className="text-2xl font-semibold mb-2 border-b pb-1">
             Ingredients
@@ -247,41 +191,53 @@ const RecipeDetails = () => {
           </div>
         </div>
 
-        {/* Instructions */}
         <div className="mb-6">
           <h2 className="text-2xl font-semibold mb-2 border-b pb-1">
             Instructions
           </h2>
           <ol className="list-decimal list-inside space-y-2">
             {instructions.map((step, index) => (
-              <li key={index} className="text-lg">
-                {step}
-              </li>
+              <li key={index} className="text-lg">{step}</li>
             ))}
           </ol>
         </div>
 
-        {/* Navigation Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            to="/"
-            className="inline-block bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition"
-          >
-            Back to Home
-          </Link>
-          <button
-            onClick={handleRegenerate}
-            className="inline-block bg-darkerPurple text-white py-2 px-4 rounded hover:bg-darkerPurple/90 transition"
-          >
-            Regenerate Recipe
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition"
-          >
-            {saving ? "Saving..." : "Save Recipe"}
-          </button>
+          {fromCookbook ? (
+            <Link
+              to="/cookbook"
+              className="inline-block bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition"
+            >
+              Back to Cookbook
+            </Link>
+          ) : (
+            <Link
+              to="/recipe/generate"
+              className="inline-block bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition"
+            >
+              Back to Generate Recipe
+            </Link>
+          )}
+          {/* Only show these buttons if NOT coming from the cookbook */}
+          {!fromCookbook && (
+            <>
+              <button
+                onClick={handleRegenerate}
+                className="inline-block bg-darkerPurple text-white py-2 px-4 rounded hover:bg-darkerPurple/90 transition"
+              >
+                Regenerate Recipe
+              </button>
+              {!currentRecipe.saved && (
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="inline-block bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition"
+                >
+                  {saving ? "Saving..." : "Save Recipe"}
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Clock, BookmarkCheck, ChefHat, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../api/api';
 
 const Cookbook = () => {
-  const [activeTab, setActiveTab] = useState('favorites');
   const [searchQuery, setSearchQuery] = useState('');
   const [recipes, setRecipes] = useState([]);
   const [loadingRecipes, setLoadingRecipes] = useState(true);
@@ -25,32 +24,24 @@ const Cookbook = () => {
           jwt: getCookie("jwt")
         });
         if (response.status === 201 && response.data.data) {
-          // The API returns data that might be a single recipe or an array.
           const fetchedData = response.data.data;
+          // Ensure we have an array.
           const fetchedRecipes = Array.isArray(fetchedData)
             ? fetchedData
             : [fetchedData];
-
-          // Map the fetched recipes to our desired structure.
+          // Map the fetched recipes while preserving all original data.
+          // Add fallback values for ingredients_list and instructions.
           const mappedRecipes = fetchedRecipes.map((r, idx) => ({
             id: idx,
-            title: r.recipe_name,
-            // cookTime and category are not provided by the API sample,
-            // so we set them to "N/A" (or you can modify as needed).
-            cookTime: "N/A",
-            category: "N/A",
-            imageUrl: r.image_url,
-            // For this example, we'll assume that recipes in the cookbook are saved.
-            isFavorite: false, 
-            saved: true,
-            // Use a truncated version of instructions as a description.
-            description: r.instructions
-              ? (r.instructions.length > 100
-                  ? r.instructions.substring(0, 100) + "..."
+            ...r, // Preserves keys like recipe_name, image_url, ingredients_list, instructions, etc.
+            ingredients_list: r.ingredients_list || "",
+            instructions: r.instructions || "",
+            description: r.instructions 
+              ? (r.instructions.length > 100 
+                  ? r.instructions.substring(0, 100) + "..." 
                   : r.instructions)
               : ""
           }));
-
           setRecipes(mappedRecipes);
         }
       } catch (error) {
@@ -63,53 +54,37 @@ const Cookbook = () => {
     fetchCookbook();
   }, []);
 
-  // Filter recipes based on search query and active tab.
-  const filteredRecipes = recipes.filter(recipe => {
-    const matchesSearch = recipe.title.toLowerCase().includes(searchQuery.toLowerCase());
-    // Assuming that recipes in the cookbook are marked as saved,
-    // and that favorites may be flagged if available.
-    const matchesTab = activeTab === 'favorites' ? recipe.isFavorite : recipe.saved;
-    return matchesSearch && matchesTab;
-  });
+  // Filter recipes based on the search query.
+  const filteredRecipes = recipes.filter(recipe =>
+    recipe.recipe_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
+  // RecipeCard component displays the recipe image, title, and description.
+  // When "View Recipe" is clicked, it navigates to /recipe with the full recipe data in state.
   const RecipeCard = ({ recipe }) => (
     <div className="group relative bg-white bg-opacity-20 backdrop-blur-lg rounded-lg overflow-hidden shadow-lg transition-all duration-300 hover:transform hover:scale-105">
       <div className="relative overflow-hidden">
         <img
-          src={recipe.imageUrl}
-          alt={recipe.title}
+          src={recipe.image_url}
+          alt={recipe.recipe_name}
           className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-40 transition-opacity duration-300"></div>
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <button className="px-4 py-2 bg-purple-600 text-white rounded-lg transform -translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-            View Recipe
-          </button>
+          <Link to="/recipe" state={{ recipe: recipe, fromCookbook: true }}>
+            <button className="px-4 py-2 bg-purple-600 text-white rounded-lg transform -translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+              View Recipe
+            </button>
+          </Link>
         </div>
       </div>
       <div className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="text-lg font-semibold" style={{ color: '#4B0082' }}>
-            {recipe.title}
-          </h3>
-          <div className="flex space-x-2">
-            {recipe.isFavorite && (
-              <Heart className="w-5 h-5 text-red-500 fill-current" />
-            )}
-            {recipe.saved && (
-              <BookmarkCheck className="w-5 h-5" style={{ color: '#4B0082' }} />
-            )}
-          </div>
-        </div>
+        <h3 className="text-lg font-semibold" style={{ color: '#4B0082' }}>
+          {recipe.recipe_name}
+        </h3>
         <p className="text-sm mb-3" style={{ color: '#4B0082' }}>
           {recipe.description}
         </p>
-        <div className="flex items-center text-sm" style={{ color: '#4B0082' }}>
-          <Clock className="w-4 h-4 mr-1" />
-          <span>{recipe.cookTime}</span>
-          <ChefHat className="w-4 h-4 ml-4 mr-1" />
-          <span>{recipe.category}</span>
-        </div>
       </div>
     </div>
   );
@@ -179,32 +154,6 @@ const Cookbook = () => {
           />
         </div>
 
-        {/* Tabs */}
-        <div className="flex justify-center mb-8 space-x-4">
-          <button
-            onClick={() => setActiveTab('favorites')}
-            className={`px-6 py-2 rounded-full transition-colors duration-300 ${
-              activeTab === 'favorites'
-                ? 'bg-purple-600 text-white'
-                : 'bg-white bg-opacity-50 hover:bg-opacity-70'
-            }`}
-            style={{ color: activeTab === 'favorites' ? 'white' : '#4B0082' }}
-          >
-            Favorites
-          </button>
-          <button
-            onClick={() => setActiveTab('saved')}
-            className={`px-6 py-2 rounded-full transition-colors duration-300 ${
-              activeTab === 'saved'
-                ? 'bg-purple-600 text-white'
-                : 'bg-white bg-opacity-50 hover:bg-opacity-70'
-            }`}
-            style={{ color: activeTab === 'saved' ? 'white' : '#4B0082' }}
-          >
-            Saved Recipes
-          </button>
-        </div>
-
         {/* Recipe Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredRecipes.map(recipe => (
@@ -218,7 +167,7 @@ const Cookbook = () => {
             <p style={{ color: '#4B0082' }}>
               {searchQuery
                 ? "No recipes found matching your search"
-                : `No ${activeTab === 'favorites' ? 'favorite' : 'saved'} recipes yet`}
+                : "No saved recipes yet"}
             </p>
           </div>
         )}
