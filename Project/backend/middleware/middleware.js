@@ -7,7 +7,7 @@ const customMiddleware = (req, res, next) => {
   };
 
 const authorization = (req, res, next) => {
-  const {jwt, values} = req.body;
+  const {jwt} = req.body;
   try {
     jwtt.verify(JSON.parse(jwt), process.env.JWT_SECRET);
     next();
