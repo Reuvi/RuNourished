@@ -8,17 +8,19 @@ const recipe_cookbook = async (jwt) => {
     const response = {
         message: "",
         success: false,
-        data: ""
+        data: []
     };
 
     try {
         user_data = jwtt.decode(JSON.parse(jwt));
 
-        const rec = Recipe.find({user_id: user_data.userId});
+        const rec = await Recipe.find({user_id: user_data.userId});
         
-        response.data = rec;
+        rec.forEach((recip) => {
+            response.data.push(JSON.parse(recip.recipe));
+        })
 
-        console.log(console.data);
+        //console.log(response.data);
         
         response.message = "Succesfully saved";
         response.success = true;
