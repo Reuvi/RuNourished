@@ -1,28 +1,37 @@
 import os
 import re
 import pickle
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify
 import pandas as pd
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
-from huggingface_hub import InferenceClient, login, notebook_login
+from huggingface_hub import InferenceClient, login
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, pipeline, AutoConfig
 import requests
 import json
-import os
 import gradio as gr
- 
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 API_KEY = os.environ.get("API_KEY")
-notebook_login()
+if not API_KEY:
+    raise Exception("Hugging Face API Key not found. Please set the API_KEY environment variable in your .env file.")
+
+# Log in using the API key (suitable for non-notebook environments)
+login(token=API_KEY)
+
 model_name = "HuggingFaceH4/zephyr-7b-beta"
 client = InferenceClient(model_name, token=API_KEY)
 
-# Load and run the model:
-def askAI(prompt,  temperature=0.9, max_new_tokens=500, top_p=0.95, repetition_penalty=1.0,):
+def askAI(prompt, temperature=0.9, max_new_tokens=500, top_p=0.95, repetition_penalty=1.0):
+    """
+    Sends a text-generation prompt to the Hugging Face Inference API and returns the generated text.
+    """
     temperature = float(temperature)
     if temperature < 1e-2:
         temperature = 1e-2
@@ -37,14 +46,21 @@ def askAI(prompt,  temperature=0.9, max_new_tokens=500, top_p=0.95, repetition_p
         seed=42,
     )
 
-    stream = client.text_generation(prompt, **generate_kwargs, stream=True, details=True, return_full_text=False)
-    output = ""
+    try:
+        stream = client.text_generation(
+            prompt,
+            **generate_kwargs,
+            stream=True,
+            details=True,
+            return_full_text=False
+        )
+    except Exception as e:
+        return f"Error calling Hugging Face API: {str(e)}"
 
+    output = ""
     for response in stream:
         output += response.token.text
-        yield output
-    return output
-
+    return output.strip()
 
 # Load dataset
 recipes = pd.read_csv('recipe_final (1).csv')
@@ -59,17 +75,13 @@ with open('scalerElement.pkl', 'rb') as f:
 with open('vectorizerElement.pkl', 'rb') as f:
     vectorizerElement = pickle.load(f)
 
-# Function to change date format
 def change_date_format(dt):
     return re.sub(r'(\d{4})-(\d{1,2})-(\d{1,2})', r'\3/\2/\1', dt)
 
 # Configure Flask application
 app = Flask(__name__)
-
-# Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
-# Ensure responses aren't cached
 @app.after_request
 def after_request(response):
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -77,55 +89,59 @@ def after_request(response):
     response.headers["Pragma"] = "no-cache"
     return response
 
-# Recipe recommendation function
-def predict(input):
+def predict(input_data):
     try:
-        numeric_features = np.array(input[:7]).reshape(1, -1)
+        numeric_features = np.array(input_data[:7]).reshape(1, -1)
         scaled_input = scalerElement.transform(numeric_features)
-        input_ing_trans = vectorizerElement.transform([input[7]])
+        input_ing_trans = vectorizerElement.transform([input_data[7]])
         combined_inputs = np.hstack([scaled_input, input_ing_trans.toarray()])
         
-        # Get recommendations
+        # Get recommendations using the pre-trained predictor
         distance, indexes = RecipePredictor.kneighbors(combined_inputs)
         recoms = recipes.iloc[indexes[0]]
         return recoms[['recipe_name', 'ingredients_list', 'image_url']].to_dict(orient='records')
-
     except Exception as e:
         return {"error": str(e)}
 
-# Route to handle both GET and POST requests
 @app.route("/", methods=["GET", "POST"])
 def index():
     try:
-        if request.method == "GET":
-            """data = request.get_json()
-            if not data or "data" not in data:
-                return jsonify({"error": "Invalid JSON data"}), 400"""
-            
-            sample_input = [28, 39, 1, 42, 24, 89, 2, 'beef, green peppers']
-            result = predict(sample_input)
-            # Fetch the recipe for the predicted recipe name
-            recipe_des = "".join(askAI(f"What is the recipe for {result[0]['recipe_name']}, {result[1]['recipe_name']} or {result[2]['recipe_name']} tell me the prep for one serving and select the one which kosher"))
+        # Use a sample input for demonstration
+        sample_input = [28, 39, 1, 42, 24, 89, 2, 'beef, green peppers']
+        result = predict(sample_input)
+        
+        # Check for errors in prediction
+        if isinstance(result, dict) and result.get("error"):
+            return jsonify({"error": result["error"]}), 500
 
-            
-            # Add the recipe to the result
-            """data = recipe_des.json()
-            json_str = json.dumps(data)
-            Recipe_str = json.loads(json_str)
-            print(Recipe_str['choices'][0]['message']['content'])
-            result[0]['recipe_des'] = Recipe_str['choices'][0]['message']['content']"""
-
-            print(f"The result is {recipe_des}")
-            return jsonify({"result": result[0]})
-
-        else:
-            sample_input = [28, 39, 1, 42, 24, 89, 2, 'green pepper']
-            result = predict(sample_input)
-            return f"<p>Prediction Result: {result}</p>"
-
+        # Select the first recommended recipe details
+        selected_recipe = result[0]
+        recipe_name = selected_recipe['recipe_name']
+        ingredients_list = selected_recipe['ingredients_list']
+        
+        # Build a prompt to generate numbered recipe instructions that incorporate the provided ingredients
+        prompt = (
+            f"You are a professional chef and recipe generator. Create a detailed recipe for one serving using the information below.\n\n"
+            f"Recipe Name: {recipe_name}\n"
+            f"Ingredients: {ingredients_list}\n\n"
+            "Instructions: Provide step-by-step instructions to prepare the recipe. Each instruction must be numbered (e.g. '1. ...', '2. ...') with no extra text before or after the numbered list. Ensure that the instructions reference the given ingredients appropriately."
+        )
+        
+        # Generate instructions using askAI
+        instructions = askAI(prompt)
+        
+        # Use regex to extract only numbered steps if extra text is returned
+        numbered_steps = "\n".join(re.findall(r'\d+\.\s*.*', instructions))
+        if numbered_steps:
+            instructions = numbered_steps
+        
+        # Add generated instructions to the selected recipe
+        selected_recipe['instructions'] = instructions
+        
+        # Return everything as JSON (no console prints)
+        return jsonify({"result": selected_recipe})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Run the Flask app
 if __name__ == '__main__':
     app.run(port=5004, debug=True)
