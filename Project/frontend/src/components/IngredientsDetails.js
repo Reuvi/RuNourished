@@ -1,11 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import { useLocation, Link } from "react-router-dom";
 
 const IngredientDetails = () => {
   const location = useLocation();
   // Expect the ingredient data to be passed in location.state.ingredient
-  const initialData = location.state?.ingredient;
-  const [ingredientData] = useState(initialData);
+  const ingredientData = location.state?.ingredient;
 
   if (!ingredientData) {
     return (
@@ -18,22 +17,26 @@ const IngredientDetails = () => {
     );
   }
 
-  // If ingredientData is an array, we take the first element
+  // If ingredientData is an array, take the first element; otherwise, use it directly.
   const details = Array.isArray(ingredientData) ? ingredientData[0] : ingredientData;
 
-  // Process the ingredients list; try JSON parsing first, then fallback to comma-splitting.
+  // Process the ingredients list: try JSON parsing first, then fallback to splitting by commas.
+  const ingredientsStr = details.ingredients_list || "";
   let rawIngredients = [];
-  if (details.ingredients_list) {
-    try {
-      rawIngredients = JSON.parse(details.ingredients_list);
-      if (!Array.isArray(rawIngredients)) {
-        rawIngredients = details.ingredients_list.split(",").map((item) => item.trim());
-      }
-    } catch (err) {
-      rawIngredients = details.ingredients_list.split(",").map((item) => item.trim());
+  try {
+    rawIngredients = JSON.parse(ingredientsStr);
+    if (!Array.isArray(rawIngredients)) {
+      rawIngredients = ingredientsStr.split(",").map((item) => item.trim());
     }
+  } catch (err) {
+    rawIngredients = ingredientsStr.split(",").map((item) => item.trim());
   }
-  const ingredients = rawIngredients.filter((item) => item !== "");
+  // Filter out any extraneous characters, quotes, or empty strings.
+  const ingredients = rawIngredients
+    .map((item) =>
+      item.replace(/[\[\]]+/g, "").replace(/^['"]+|['"]+$/g, "").trim()
+    )
+    .filter((item) => item !== "");
 
   return (
     <div className="min-h-screen bg-custom flex items-center justify-center p-8">
