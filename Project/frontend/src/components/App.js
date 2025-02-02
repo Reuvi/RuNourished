@@ -1,6 +1,16 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { Navbar, Login, Signup, Home, Cookbook, Profile, RecipeDetails, RecipeGeneration } from "./";
+import { 
+  Navbar, 
+  Login, 
+  Signup, 
+  Home, 
+  Cookbook, 
+  Profile, 
+  RecipeDetails, 
+  RecipeGeneration, 
+  IngredientGeneration 
+} from "./";
 
 function getCookie(name) {
   const value = `; ${document.cookie}`;
@@ -83,6 +93,21 @@ function App() {
               <Navbar />
               <main className="flex-1">
                 <RecipeGeneration />
+              </main>
+            </div>
+          </ProtectedRouteWrapper>
+        }
+      />
+
+      {/* Protected Ingredient Generation route */}
+      <Route
+        path="/ingredient/generate"
+        element={
+          <ProtectedRouteWrapper>
+            <div className="h-screen flex flex-col">
+              <Navbar />
+              <main className="flex-1">
+                <IngredientGeneration />
               </main>
             </div>
           </ProtectedRouteWrapper>
