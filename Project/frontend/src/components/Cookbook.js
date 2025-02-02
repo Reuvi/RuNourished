@@ -1,52 +1,79 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, Clock, BookmarkCheck, ChefHat, Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import api from '../api/api';
 
 const Cookbook = () => {
   const [activeTab, setActiveTab] = useState('favorites');
   const [searchQuery, setSearchQuery] = useState('');
+  const [recipes, setRecipes] = useState([]);
+  const [loadingRecipes, setLoadingRecipes] = useState(true);
 
-  // Sample data - replace with your actual data
-  const sampleRecipes = [
-    {
-      id: 1,
-      title: 'Blueberry Pancakes',
-      cookTime: '20 mins',
-      category: 'Breakfast',
-      imageUrl: '/api/placeholder/300/200',
-      isFavorite: true,
-      saved: true,
-      description: 'Fluffy pancakes loaded with fresh blueberries'
-    },
-    {
-      id: 2,
-      title: 'Grilled Salmon',
-      cookTime: '25 mins',
-      category: 'Dinner',
-      imageUrl: '/api/placeholder/300/200',
-      isFavorite: true,
-      saved: false,
-      description: 'Perfect grilled salmon with herbs and lemon'
-    },
-    {
-      id: 3,
-      title: 'Avocado Toast',
-      cookTime: '10 mins',
-      category: 'Breakfast',
-      imageUrl: '/api/placeholder/300/200',
-      isFavorite: false,
-      saved: true,
-      description: 'Creamy avocado on toasted sourdough'
-    }
-  ];
+  // Helper function to retrieve a cookie value.
+  const getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+    return null;
+  };
 
-  const filteredRecipes = sampleRecipes.filter(recipe => {
+  // Fetch cookbook data from the API endpoint on mount.
+  useEffect(() => {
+    const fetchCookbook = async () => {
+      try {
+        const response = await api.post("/v1/profile/recipes/cookbook", {
+          jwt: getCookie("jwt")
+        });
+        if (response.status === 201 && response.data.data) {
+          // The API returns data that might be a single recipe or an array.
+          const fetchedData = response.data.data;
+          const fetchedRecipes = Array.isArray(fetchedData)
+            ? fetchedData
+            : [fetchedData];
+
+          // Map the fetched recipes to our desired structure.
+          const mappedRecipes = fetchedRecipes.map((r, idx) => ({
+            id: idx,
+            title: r.recipe_name,
+            // cookTime and category are not provided by the API sample,
+            // so we set them to "N/A" (or you can modify as needed).
+            cookTime: "N/A",
+            category: "N/A",
+            imageUrl: r.image_url,
+            // For this example, we'll assume that recipes in the cookbook are saved.
+            isFavorite: false, 
+            saved: true,
+            // Use a truncated version of instructions as a description.
+            description: r.instructions
+              ? (r.instructions.length > 100
+                  ? r.instructions.substring(0, 100) + "..."
+                  : r.instructions)
+              : ""
+          }));
+
+          setRecipes(mappedRecipes);
+        }
+      } catch (error) {
+        console.error("Error fetching cookbook:", error);
+      } finally {
+        setLoadingRecipes(false);
+      }
+    };
+
+    fetchCookbook();
+  }, []);
+
+  // Filter recipes based on search query and active tab.
+  const filteredRecipes = recipes.filter(recipe => {
     const matchesSearch = recipe.title.toLowerCase().includes(searchQuery.toLowerCase());
+    // Assuming that recipes in the cookbook are marked as saved,
+    // and that favorites may be flagged if available.
     const matchesTab = activeTab === 'favorites' ? recipe.isFavorite : recipe.saved;
     return matchesSearch && matchesTab;
   });
 
   const RecipeCard = ({ recipe }) => (
-    <div className="group relative bg-white bg-opacity-20 backdrop-blur-lg rounded-lg overflow-hidden shadow-lg transition-all duration-300 hover:transform hover:scale-105 hover:shadow-xl">
+    <div className="group relative bg-white bg-opacity-20 backdrop-blur-lg rounded-lg overflow-hidden shadow-lg transition-all duration-300 hover:transform hover:scale-105">
       <div className="relative overflow-hidden">
         <img
           src={recipe.imageUrl}
@@ -86,6 +113,17 @@ const Cookbook = () => {
       </div>
     </div>
   );
+
+  if (loadingRecipes) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center bg-custom">
+        <div className="w-24 h-24 border-t-4 border-blue-500 border-solid rounded-full animate-spin"></div>
+        <p className="mt-4 text-2xl" style={{ color: '#4B0082' }}>
+          Loading Cookbook...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div
