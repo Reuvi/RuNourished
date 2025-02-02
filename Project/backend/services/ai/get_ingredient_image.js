@@ -11,14 +11,10 @@ const get_ingredient_image = async (image, jwt) => {
 
     const request = {image};
 
-    console.log(request)
 
     //Application of discrete 1 , demorgans law :)
     try {
         const data = await axios.post("http://127.0.0.1:5004/detect-ingredients", request);
-
-        console.log(data.data);
-
         
         response.message = "AI Success";
         response.data = data.data;

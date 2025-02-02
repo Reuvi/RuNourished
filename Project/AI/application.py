@@ -1,6 +1,7 @@
 import os
 import re
 import base64
+import cv2
 import numpy as np
 import pandas as pd
 from flask import Flask, request, jsonify
