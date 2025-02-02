@@ -33,10 +33,27 @@ function Profile() {
     }
   }, []);
 
-  const handleUpdate = (e) => {
+  const handleUpdate = async (e) => {
     e.preventDefault();
-    // TODO: Actually call your API or update the cookie again here
-    alert("Profile updated!");
+    try {
+      // Call the login API endpoint with the email and password
+      const response = await api.post('/v1/profile/update', { username, email });
+      console.log(response.data.message);
+
+      // Clear any previous error message
+      setErrorMessage('');
+
+      // Set authentication cookies
+      document.cookie = `jwt=${JSON.stringify(response.data.jwt)}; path=/; Secure; SameSite=Strict`;
+      document.cookie = `values=${JSON.stringify(response.data.values)}; path=/; Secure; SameSite=Strict`;
+
+      // Navigate to the home page after a successful login
+      navigate("/home");
+    } catch (err) {
+      console.error("Error logging in:", err);
+      // Set error message from API response or a default message
+      setErrorMessage(err.response?.data?.error || "Profile failed to update. Please try again.");
+    }
   };
 
   return (
