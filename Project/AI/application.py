@@ -65,7 +65,7 @@ def askAI(prompt, temperature=0.9, max_new_tokens=500, top_p=0.95, repetition_pe
 # Load dataset
 recipes = pd.read_csv('recipe_final (1).csv')
 
-# Load pre-trained models
+# Load pre-trained models / transformers
 with open('modelRecipe.pkl', 'rb') as f:
     RecipePredictor = pickle.load(f)
 
@@ -91,15 +91,23 @@ def after_request(response):
 
 def predict(input_data):
     try:
-        numeric_features = np.array(input_data[:7]).reshape(1, -1)
+        # Create a DataFrame for numerical features with the correct column names
+        feature_names = ['calories', 'fat', 'carbohydrates', 'protein', 'cholesterol', 'sodium', 'fiber']
+        numeric_features = pd.DataFrame([input_data[:7]], columns=feature_names)
         scaled_input = scalerElement.transform(numeric_features)
-        input_ing_trans = vectorizerElement.transform([input_data[7]])
+        
+        # Multiply the ingredient TF-IDF features by the same weight as during training.
+        ingredient_weight = 1000.0  # Adjust this value if needed
+        input_ing_trans = vectorizerElement.transform([input_data[7]]) * ingredient_weight
+        
+        # Combine the numerical and ingredient features
         combined_inputs = np.hstack([scaled_input, input_ing_trans.toarray()])
         
         # Get recommendations using the pre-trained predictor
         distance, indexes = RecipePredictor.kneighbors(combined_inputs)
         recoms = recipes.iloc[indexes[0]]
-        return recoms[['recipe_name', 'ingredients_list', 'image_url', 'aver_rate', 'review_nums', 'calories', 'fat', 'carbohydrates', 'protein', 'cholesterol', 'sodium', 'fiber']].to_dict(orient='records')
+        return recoms[['recipe_name', 'ingredients_list', 'image_url', 'aver_rate', 'review_nums', 
+                       'calories', 'fat', 'carbohydrates', 'protein', 'cholesterol', 'sodium', 'fiber']].to_dict(orient='records')
     except Exception as e:
         return {"error": str(e)}
 
@@ -159,7 +167,7 @@ def ai_model():
         # Add generated instructions to the selected recipe
         selected_recipe['instructions'] = instructions
 
-        # Return everything as JSON (no console prints)
+        # Return everything as JSON
         return jsonify({"result": selected_recipe})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
