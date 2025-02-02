@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../api/api";
 import {
   Flame,
@@ -28,10 +29,12 @@ function Home() {
     ingredients: [""]
   });
 
+  const navigate = useNavigate();
+
   function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
+    if (parts.length === 2) return parts.pop().split(";").shift();
     return null;
   }
 
@@ -66,9 +69,15 @@ function Home() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.post("/v1/ai/get_recipe", {...formData, values: getCookie("values"), jwt: getCookie("jwt")});
+      const response = await api.post("/v1/ai/get_recipe", {
+        ...formData,
+        values: getCookie("values"),
+        jwt: getCookie("jwt")
+      });
       console.log("Response from AI model:", response.data);
-      // Optionally reset the form or step here
+
+      // Navigate to the recipe details page and pass the recipe data via state
+      navigate("/recipe", { state: { recipe: response.data.recipe.result } });
       setStep(1);
     } catch (error) {
       console.error("Error posting data:", error);
@@ -105,7 +114,7 @@ function Home() {
       <div className="orb-small"></div>
 
       <div className="relative flex items-center justify-center h-full px-4">
-        {/* Transparent form container with strong blur (similar to Login) */}
+        {/* Transparent form container with strong blur */}
         <div className="bg-white bg-opacity-20 backdrop-blur-lg p-8 rounded-lg shadow-xl w-full max-w-4xl my-10">
           <h2 className="text-3xl font-bold mb-6 text-darkerPurple text-center">
             Customize Your Recipe Preferences
@@ -155,10 +164,7 @@ function Home() {
                 </div>
                 {/* Carbohydrates Field */}
                 <div className="flex flex-col">
-                  <label
-                    htmlFor="carbohydrates"
-                    className="mb-1 text-darkerPurple"
-                  >
+                  <label htmlFor="carbohydrates" className="mb-1 text-darkerPurple">
                     <Layers className="inline mr-2 text-darkerPurple" size={20} />
                     Max Carbohydrates (g)
                   </label>

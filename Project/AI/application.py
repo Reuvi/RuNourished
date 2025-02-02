@@ -1,6 +1,7 @@
 import os
 import re
 import pickle
+import random
 from flask import Flask, request, jsonify
 import pandas as pd
 import numpy as np
@@ -137,8 +138,8 @@ def ai_model():
         if isinstance(result, dict) and result.get("error"):
             return jsonify({"error": result["error"]}), 500
 
-        # Select the first recommended recipe details
-        selected_recipe = result[0]
+        # Randomly select one of the recommended recipes
+        selected_recipe = random.choice(result)
         recipe_name = selected_recipe['recipe_name']
         ingr_str = selected_recipe['ingredients_list']
 
