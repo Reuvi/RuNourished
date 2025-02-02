@@ -103,41 +103,62 @@ def predict(input_data):
     except Exception as e:
         return {"error": str(e)}
 
-@app.route("/", methods=["GET", "POST"])
-def index():
+@app.route("/ai-model", methods=["POST"])
+def ai_model():
     try:
-        # Use a sample input for demonstration
-        sample_input = [28, 39, 1, 42, 24, 89, 2, 'beef, green peppers']
-        result = predict(sample_input)
-        
-        # Check for errors in prediction
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+
+        # Convert nutritional fields to float
+        try:
+            calories = float(data.get("calories", 0))
+            fat = float(data.get("fat", 0))
+            carbohydrates = float(data.get("carbohydrates", 0))
+            protein = float(data.get("protein", 0))
+            cholesterol = float(data.get("cholesterol", 0))
+            sodium = float(data.get("sodium", 0))
+            fiber = float(data.get("fiber", 0))
+        except Exception as e:
+            return jsonify({"error": f"Invalid nutritional value: {e}"}), 400
+
+        # Process ingredients: expect a list of ingredients
+        ingredients_list = data.get("ingredients", [])
+        if not isinstance(ingredients_list, list):
+            return jsonify({"error": "Ingredients must be a list"}), 400
+
+        # Join ingredients into a comma-separated string
+        ingredients_str = ", ".join(ing.strip() for ing in ingredients_list if ing.strip() != "")
+
+        # Create the input array for the predictor
+        input_data = [calories, fat, carbohydrates, protein, cholesterol, sodium, fiber, ingredients_str]
+
+        result = predict(input_data)
         if isinstance(result, dict) and result.get("error"):
             return jsonify({"error": result["error"]}), 500
 
         # Select the first recommended recipe details
         selected_recipe = result[0]
         recipe_name = selected_recipe['recipe_name']
-        ingredients_list = selected_recipe['ingredients_list']
-        
+        ingr_str = selected_recipe['ingredients_list']
+
         # Build a prompt to generate numbered recipe instructions that incorporate the provided ingredients
         prompt = (
             f"You are a professional chef and recipe generator. Create a detailed recipe for one serving using the information below.\n\n"
             f"Recipe Name: {recipe_name}\n"
-            f"Ingredients: {ingredients_list}\n\n"
+            f"Ingredients: {ingr_str}\n\n"
             "Instructions: Provide step-by-step instructions to prepare the recipe. Each instruction must be numbered (e.g. '1. ...', '2. ...') with no extra text before or after the numbered list. Ensure that the instructions reference the given ingredients appropriately."
         )
-        
+
         # Generate instructions using askAI
         instructions = askAI(prompt)
-        
-        # Use regex to extract only numbered steps if extra text is returned
         numbered_steps = "\n".join(re.findall(r'\d+\.\s*.*', instructions))
         if numbered_steps:
             instructions = numbered_steps
-        
+
         # Add generated instructions to the selected recipe
         selected_recipe['instructions'] = instructions
-        
+
         # Return everything as JSON (no console prints)
         return jsonify({"result": selected_recipe})
     except Exception as e:
