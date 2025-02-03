@@ -11,7 +11,7 @@ const register = async (username, password, email) => {
 
     if (!username || !email || !password) {
         response.message = "All fields are required.";
-        return respose;
+        return response;
       }
     
     if (!validator.isLength(username, { min: 3, max: 50 })) {
