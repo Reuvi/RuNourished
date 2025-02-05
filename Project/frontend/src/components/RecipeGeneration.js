@@ -14,9 +14,7 @@ import {
 } from "lucide-react";
 
 function RecipeGeneration() {
-  // Two-step form:
-  // Step 1: Nutritional Preferences
-  // Step 2: Ingredients (with option to add as many as desired)
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -30,7 +28,30 @@ function RecipeGeneration() {
     ingredients: [""],
   });
 
-  const navigate = useNavigate();
+  // Check if the user is a guest
+  const isGuest = document.cookie.includes("guest=true");
+
+  // If guest, display a message and disable the generation feature.
+  if (isGuest) {
+    return (
+      <div className="h-full relative overflow-hidden bg-custom flex items-center justify-center">
+        <div className="bg-white bg-opacity-20 backdrop-blur-lg p-8 rounded-lg shadow-xl w-full max-w-xl text-center">
+          <h2 className="text-3xl font-bold mb-6 text-darkerPurple">
+            AI Generation Unavailable
+          </h2>
+          <p className="text-darkerPurple mb-4">
+            Guest accounts cannot access the AI generation feature. Please sign up for full access.
+          </p>
+          <button
+            onClick={() => navigate("/signup")}
+            className="bg-darkerPurple text-white py-2 px-4 rounded hover:bg-darkerPurple/90 transition"
+          >
+            Sign Up
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   function getCookie(name) {
     const value = `; ${document.cookie}`;
@@ -39,19 +60,16 @@ function RecipeGeneration() {
     return null;
   }
 
-  // Handler for nutritional fields
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Update a single ingredient
   const handleIngredientChange = (index, e) => {
     const newIngredients = [...formData.ingredients];
     newIngredients[index] = e.target.value;
     setFormData({ ...formData, ingredients: newIngredients });
   };
 
-  // Add a new ingredient field
   const handleAddIngredient = (e) => {
     e.preventDefault();
     setFormData({ ...formData, ingredients: [...formData.ingredients, ""] });
@@ -75,13 +93,9 @@ function RecipeGeneration() {
       const randomizedData = {
         calories: Math.floor(Math.random() * parseFloat(formData.calories)),
         fat: Math.floor(Math.random() * parseFloat(formData.fat)),
-        carbohydrates: Math.floor(
-          Math.random() * parseFloat(formData.carbohydrates)
-        ),
-        protein: formData.protein, // no randomization
-        cholesterol: Math.floor(
-          Math.random() * parseFloat(formData.cholesterol)
-        ),
+        carbohydrates: Math.floor(Math.random() * parseFloat(formData.carbohydrates)),
+        protein: formData.protein,
+        cholesterol: Math.floor(Math.random() * parseFloat(formData.cholesterol)),
         sodium: Math.floor(Math.random() * parseFloat(formData.sodium)),
         fiber: Math.floor(Math.random() * parseFloat(formData.fiber)),
         ingredients: formData.ingredients,
@@ -103,7 +117,6 @@ function RecipeGeneration() {
     }
   };
 
-  // Fill ONLY empty fields with default values
   const handleFillEmptyFields = (e) => {
     e.preventDefault();
     const newFormData = { ...formData };
@@ -117,7 +130,6 @@ function RecipeGeneration() {
     setFormData(newFormData);
   };
 
-  // For Step 2, split the ingredients array into two columns based on index.
   const nextIndex = formData.ingredients.length;
   const leftIndices = formData.ingredients
     .map((_, i) => i)
@@ -126,12 +138,13 @@ function RecipeGeneration() {
     .map((_, i) => i)
     .filter((i) => i % 2 === 1);
 
-  // Loading Skeleton View
   if (loading) {
     return (
       <div className="h-full flex flex-col items-center justify-center bg-custom">
         <div className="w-24 h-24 border-t-4 border-blue-500 border-solid rounded-full animate-spin"></div>
-        <p className="mt-4 text-2xl text-darkerPurple">Generating your recipe...</p>
+        <p className="mt-4 text-2xl text-darkerPurple">
+          Generating your recipe...
+        </p>
       </div>
     );
   }
@@ -143,19 +156,19 @@ function RecipeGeneration() {
       <div className="orb-small"></div>
 
       <div className="relative flex items-center justify-center h-full px-4">
-        {/* Transparent form container with strong blur */}
         <div className="bg-white bg-opacity-20 backdrop-blur-lg p-8 rounded-lg shadow-xl w-full max-w-4xl my-10">
           <h2 className="text-3xl font-bold mb-6 text-darkerPurple text-center">
             Generate Your Recipe
           </h2>
-          <p className="text-center mb-4 text-darkerPurple">Step {step} of 2</p>
+          <p className="text-center mb-4 text-darkerPurple">
+            Step {step} of 2
+          </p>
           <form
             onSubmit={step === 2 ? handleSubmit : handleNext}
             className="grid grid-cols-1 gap-6"
           >
             {step === 1 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
-                {/* Calories Field */}
                 <div className="flex flex-col">
                   <label htmlFor="calories" className="mb-1 text-darkerPurple">
                     <Flame className="inline mr-2 text-darkerPurple" size={20} />
@@ -173,7 +186,6 @@ function RecipeGeneration() {
                     />
                   </div>
                 </div>
-                {/* Fat Field */}
                 <div className="flex flex-col">
                   <label htmlFor="fat" className="mb-1 text-darkerPurple">
                     <Droplet className="inline mr-2 text-darkerPurple" size={20} />
@@ -191,7 +203,6 @@ function RecipeGeneration() {
                     />
                   </div>
                 </div>
-                {/* Carbohydrates Field */}
                 <div className="flex flex-col">
                   <label htmlFor="carbohydrates" className="mb-1 text-darkerPurple">
                     <Layers className="inline mr-2 text-darkerPurple" size={20} />
@@ -209,7 +220,6 @@ function RecipeGeneration() {
                     />
                   </div>
                 </div>
-                {/* Protein Field */}
                 <div className="flex flex-col">
                   <label htmlFor="protein" className="mb-1 text-darkerPurple">
                     <Zap className="inline mr-2 text-darkerPurple" size={20} />
@@ -227,7 +237,6 @@ function RecipeGeneration() {
                     />
                   </div>
                 </div>
-                {/* Cholesterol Field */}
                 <div className="flex flex-col">
                   <label htmlFor="cholesterol" className="mb-1 text-darkerPurple">
                     <Heart className="inline mr-2 text-darkerPurple" size={20} />
@@ -245,7 +254,6 @@ function RecipeGeneration() {
                     />
                   </div>
                 </div>
-                {/* Sodium Field */}
                 <div className="flex flex-col">
                   <label htmlFor="sodium" className="mb-1 text-darkerPurple">
                     <Percent className="inline mr-2 text-darkerPurple" size={20} />
@@ -263,7 +271,6 @@ function RecipeGeneration() {
                     />
                   </div>
                 </div>
-                {/* Fiber Field */}
                 <div className="flex flex-col">
                   <label htmlFor="fiber" className="mb-1 text-darkerPurple">
                     <Leaf className="inline mr-2 text-darkerPurple" size={20} />
@@ -283,10 +290,8 @@ function RecipeGeneration() {
                 </div>
               </div>
             )}
-
             {step === 2 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
-                {/* Left Column (even-index ingredients) */}
                 <div className="flex flex-col gap-4">
                   {leftIndices.map((i) => (
                     <div key={i} className="flex flex-col">
@@ -316,8 +321,6 @@ function RecipeGeneration() {
                     </button>
                   )}
                 </div>
-
-                {/* Right Column (odd-index ingredients) */}
                 <div className="flex flex-col gap-4">
                   {rightIndices.map((i) => (
                     <div key={i} className="flex flex-col">
@@ -349,8 +352,6 @@ function RecipeGeneration() {
                 </div>
               </div>
             )}
-
-            {/* Navigation Buttons */}
             <div className="flex justify-between mt-6">
               {step === 1 ? (
                 <button

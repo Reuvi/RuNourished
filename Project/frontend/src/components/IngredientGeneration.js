@@ -8,8 +8,32 @@ function IngredientGeneration() {
   const [recipeName, setRecipeName] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [loading, setLoading] = useState(false);
-
   const navigate = useNavigate();
+
+  // Check if the user is a guest
+  const isGuest = document.cookie.includes("guest=true");
+
+  // If guest, display a message and disable the AI generation feature.
+  if (isGuest) {
+    return (
+      <div className="h-full relative overflow-hidden bg-custom flex items-center justify-center">
+        <div className="bg-white bg-opacity-20 backdrop-blur-lg p-8 rounded-lg shadow-xl w-full max-w-xl text-center">
+          <h2 className="text-3xl font-bold mb-6 text-darkerPurple">
+            AI Generation Unavailable
+          </h2>
+          <p className="text-darkerPurple mb-4">
+            Guest accounts cannot access the AI generation feature. Please sign up for full access.
+          </p>
+          <button
+            onClick={() => navigate("/signup")}
+            className="bg-darkerPurple text-white py-2 px-4 rounded hover:bg-darkerPurple/90 transition"
+          >
+            Sign Up
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   function getCookie(name) {
     const value = `; ${document.cookie}`;
@@ -18,25 +42,21 @@ function IngredientGeneration() {
     return null;
   }
 
-  // Handler for text input
   const handleTextChange = (e) => {
     setRecipeName(e.target.value);
   };
 
-  // Handler for image upload
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedImage(e.target.files[0]);
     }
   };
 
-  // Convert file to Base64 string
   const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => {
-        // Remove the data prefix, leaving only the Base64 string
         const base64String = reader.result.split(",")[1];
         resolve(base64String);
       };
@@ -44,52 +64,38 @@ function IngredientGeneration() {
     });
   };
 
-  // Submit handler for both modes
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       if (activeTab === "text") {
-        // Post using recipe name text
         const response = await api.post("/v1/ai/get_ingredient", {
           recipeName,
           values: getCookie("values"),
           jwt: getCookie("jwt"),
         });
         console.log("Response from AI model (text):", response.data);
-        // Assuming backend returns: { message: "AI Success", data: { ingredient: { result: [ ... ] } } }
         const firstResult = response.data.data.ingredient.result[0];
         navigate("/ingredient", { state: { ingredient: firstResult } });
       } else if (activeTab === "image") {
-        // Convert selected image to Base64
         const base64Image = await fileToBase64(selectedImage);
-        // Post using image upload
         const response = await api.post("/v1/ai/get_ingredient_image", {
           image: base64Image,
           values: getCookie("values"),
           jwt: getCookie("jwt"),
         });
         console.log("Response from AI model (image):", response.data);
-
-        // Check the structure of the returned data and adjust accordingly
         let ingredientData;
         if (response.data.data.ingredient.result) {
-          // In case the backend uses a "result" property (similar to text)
           ingredientData = response.data.data.ingredient.result[0];
         } else if (response.data.data.ingredient.ingredients) {
-          // When the backend returns ingredients directly in an "ingredients" array
-          // You can further process or format this data if needed.
           ingredientData = {
             ...response.data.data.ingredient,
-            // Create a comma-separated list for the details page if needed
             ingredients_list: response.data.data.ingredient.ingredients.join(", "),
           };
         } else {
-          // Fallback: use the whole ingredient object
           ingredientData = response.data.data.ingredient;
         }
-
-        // Create a preview URL for the uploaded image
         const imagePreviewUrl = selectedImage ? URL.createObjectURL(selectedImage) : null;
         navigate("/ingredient", { state: { ingredient: ingredientData, image: imagePreviewUrl } });
       }
@@ -117,7 +123,6 @@ function IngredientGeneration() {
       <div className="orb-small"></div>
 
       <div className="relative flex items-center justify-center h-full px-4">
-        {/* Transparent form container with strong blur */}
         <div className="bg-white bg-opacity-20 backdrop-blur-lg p-8 rounded-lg shadow-xl w-full max-w-md my-10">
           <h2 className="text-3xl font-bold mb-6 text-darkerPurple text-center">
             Generate Ingredients
