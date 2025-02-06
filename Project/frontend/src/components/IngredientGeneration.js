@@ -25,7 +25,12 @@ function IngredientGeneration() {
             Guest accounts cannot access the AI generation feature. Please sign up for full access.
           </p>
           <button
-            onClick={() => navigate("/signup")}
+            onClick={ () => {
+              document.cookie = "jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+              document.cookie = "values=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+              document.cookie = "guest=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+              navigate("/login");
+            }}
             className="bg-darkerPurple text-white py-2 px-4 rounded hover:bg-darkerPurple/90 transition"
           >
             Sign Up
@@ -83,7 +88,10 @@ function IngredientGeneration() {
           image: base64Image,
           values: getCookie("values"),
           jwt: getCookie("jwt"),
-        });
+        }, {
+          maxContentLength: 10000000,
+          maxBodyLength: 10000000}
+        );
         console.log("Response from AI model (image):", response.data);
         let ingredientData;
         if (response.data.data.ingredient.result) {
