@@ -14,6 +14,10 @@ import psutil  # For memory usage logging
 from ultralytics import YOLO  # For YOLOv8 object detection
 import gc  # For explicit garbage collection
 
+# Limit thread usage to reduce memory overhead.
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -28,9 +32,10 @@ login(token=API_KEY)
 model_name = "HuggingFaceH4/zephyr-7b-beta"
 client = InferenceClient(model_name, token=API_KEY)
 
-def askAI(prompt, temperature=0.9, max_new_tokens=500, top_p=0.95, repetition_penalty=1.0):
+def askAI(prompt, temperature=0.9, max_new_tokens=300, top_p=0.95, repetition_penalty=1.0):
     """
     Sends a text-generation prompt to the Hugging Face Inference API and returns the generated text.
+    Lowering max_new_tokens reduces peak memory usage.
     """
     temperature = max(float(temperature), 1e-2)
     top_p = float(top_p)
@@ -57,45 +62,20 @@ def askAI(prompt, temperature=0.9, max_new_tokens=500, top_p=0.95, repetition_pe
         output += response.token.text
     return output.strip()
 
-# Load dataset with low_memory option
-recipes = pd.read_csv('recipe_final (1).csv', low_memory=True)
+# Specify dtypes to reduce memory usage when loading the recipes dataset.
+dtype_spec = {
+    'calories': 'float16',
+    'fat': 'float16',
+    'carbohydrates': 'float16',
+    'protein': 'float16',
+    'cholesterol': 'float16',
+    'sodium': 'float16',
+    'fiber': 'float16'
+    # Add any additional numeric columns as needed.
+}
+recipes = pd.read_csv('recipe_final (1).csv', low_memory=True, dtype=dtype_spec)
 
-# Load pre-trained models using joblib with memory mapping
-RecipePredictor = load('modelRecipe.pkl', mmap_mode='r')
-scalerElement = load('scalerElement.pkl', mmap_mode='r')
-vectorizerElement = load('vectorizerElement.pkl', mmap_mode='r')
-
-# Load the vectorizer for the IngredientPredictor.
-vectorizerIngredient = load('vectorizerIngredient.pkl', mmap_mode='r')
-IngredientPredictor = load('modelIngredients.pkl', mmap_mode='r')
-
-# Load YOLOv8 model for object detection
-yolo_model = YOLO('yolov8s.pt')
-
-def change_date_format(dt):
-    return re.sub(r'(\d{4})-(\d{1,2})-(\d{1,2})', r'\3/\2/\1', dt)
-
-# Configure Flask application
-app = Flask(__name__)
-app.config["TEMPLATES_AUTO_RELOAD"] = True  # Disable in production if desired
-
-@app.after_request
-def after_request(response):
-    # Set no-cache headers
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Expires"] = 0
-    response.headers["Pragma"] = "no-cache"
-    
-    # Log current memory usage in MB
-    process = psutil.Process(os.getpid())
-    mem_usage_mb = process.memory_info().rss / (1024 * 1024)
-    print("Current memory usage: {:.2f} MB".format(mem_usage_mb))
-    
-    # Force garbage collection to free unused memory
-    gc.collect()
-    return response
-
-def predict(input_data):
+def predict(input_data, RecipePredictor, scalerElement, vectorizerElement):
     """
     Given an input array (numerical nutritional values and ingredients string), scales
     and vectorizes the features, then returns recommended recipes.
@@ -103,11 +83,10 @@ def predict(input_data):
     try:
         feature_names = ['calories', 'fat', 'carbohydrates', 'protein', 'cholesterol', 'sodium', 'fiber']
         numeric_features = pd.DataFrame([input_data[:7]], columns=feature_names)
-        # Cast numerical features to float16 for lower memory usage if acceptable by your model
+        # Use float16 for lower memory usage.
         scaled_input = scalerElement.transform(numeric_features).astype(np.float16)
         
         ingredient_weight = 1000.0
-        # Transform ingredient text and convert to dense float16 array
         input_ing_trans = vectorizerElement.transform([input_data[7]]) * ingredient_weight
         input_ing_dense = input_ing_trans.toarray().astype(np.float16)
         
@@ -115,7 +94,7 @@ def predict(input_data):
         distance, indexes = RecipePredictor.kneighbors(combined_inputs)
         recoms = recipes.iloc[indexes[0]]
         
-        # Free temporary arrays
+        # Delete temporary arrays and force garbage collection.
         del numeric_features, scaled_input, input_ing_trans, input_ing_dense, combined_inputs
         gc.collect()
         
@@ -124,11 +103,31 @@ def predict(input_data):
     except Exception as e:
         return {"error": str(e)}
 
+# Configure Flask application
+app = Flask(__name__)
+app.config["TEMPLATES_AUTO_RELOAD"] = True  # Disable in production if desired
+
+@app.after_request
+def after_request(response):
+    # Set no-cache headers.
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Expires"] = 0
+    response.headers["Pragma"] = "no-cache"
+    
+    # Log current memory usage.
+    process = psutil.Process(os.getpid())
+    mem_usage_mb = process.memory_info().rss / (1024 * 1024)
+    print("Current memory usage: {:.2f} MB".format(mem_usage_mb))
+    
+    gc.collect()
+    return response
+
 @app.route("/ai-model", methods=["POST"])
 def ai_model():
     """
     Expects a JSON payload with nutritional values and a list of ingredients.
     Returns a recommended recipe with generated instructions.
+    Loads heavy models on demand and clears them after use.
     """
     try:
         data = request.get_json()
@@ -152,7 +151,18 @@ def ai_model():
         ingredients_str = ", ".join(ing.strip() for ing in ingredients_list if ing.strip())
 
         input_data = [calories, fat, carbohydrates, protein, cholesterol, sodium, fiber, ingredients_str]
-        result = predict(input_data)
+
+        # Load models on demand.
+        RecipePredictor = load('modelRecipe.pkl', mmap_mode='r')
+        scalerElement = load('scalerElement.pkl', mmap_mode='r')
+        vectorizerElement = load('vectorizerElement.pkl', mmap_mode='r')
+
+        result = predict(input_data, RecipePredictor, scalerElement, vectorizerElement)
+
+        # Clear models from memory.
+        del RecipePredictor, scalerElement, vectorizerElement
+        gc.collect()
+
         if isinstance(result, dict) and result.get("error"):
             return jsonify({"error": result["error"]}), 500
 
@@ -181,6 +191,7 @@ def ai_model_ingredients():
     """
     Expects a JSON payload with a "recipeName" key.
     Uses the IngredientPredictor (a NearestNeighbors model) to return recommendations.
+    Loads required models on demand and clears them after use.
     """
     try:
         data = request.get_json()
@@ -190,11 +201,19 @@ def ai_model_ingredients():
         if not recipe_name:
             return jsonify({"error": "No recipe name provided"}), 400
 
-        # Vectorize the recipe name using the vectorizer for ingredient queries.
+        # Load ingredient prediction models on demand.
+        vectorizerIngredient = load('vectorizerIngredient.pkl', mmap_mode='r')
+        IngredientPredictor = load('modelIngredients.pkl', mmap_mode='r')
+
         query_vec = vectorizerIngredient.transform([recipe_name])
         distances, indexes = IngredientPredictor.kneighbors(query_vec)
         
         recommended = recipes.iloc[indexes[0]][['recipe_name', 'ingredients_list']].to_dict(orient='records')
+
+        # Clear the models from memory.
+        del vectorizerIngredient, IngredientPredictor
+        gc.collect()
+
         return jsonify({"result": recommended})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -203,8 +222,8 @@ def ai_model_ingredients():
 def detect_ingredients():
     """
     Expects a JSON payload with a Base64-encoded image under the key "image".
-    Runs YOLOv8 inference to detect objects in the image and returns a list of unique object names,
-    which are considered the detected ingredients. The image is compressed to lower memory usage.
+    Runs YOLO inference to detect objects and returns a list of unique object names.
+    Loads the YOLO model on demand and clears it after use.
     """
     try:
         data = request.get_json()
@@ -218,22 +237,23 @@ def detect_ingredients():
         if img is None:
             return jsonify({"error": "Failed to decode image"}), 400
 
-        # Compress the image by resizing if its largest dimension exceeds a threshold (e.g., 800 pixels)
-        max_dimension = 800
+        # Lower resolution input to reduce memory usage.
+        max_dimension = 600  # Reduced from 800.
         height, width = img.shape[:2]
         if max(height, width) > max_dimension:
             scaling_factor = max_dimension / float(max(height, width))
             new_size = (int(width * scaling_factor), int(height * scaling_factor))
             img = cv2.resize(img, new_size, interpolation=cv2.INTER_AREA)
         
-        # Run YOLOv8 inference on the compressed image
+        # Load YOLO model on demand.
+        yolo_model = YOLO('yolov8s.pt')
         results = yolo_model(source=img, conf=0.4, show=False)
         boxes_data = results[0].boxes.data.cpu().numpy().tolist()
         detected_objects = [yolo_model.names[int(box[-1])] for box in boxes_data]
         unique_objects = list(set(detected_objects))
         
-        # Free the image from memory explicitly
-        del img, nparr, image_bytes
+        # Clear image and YOLO model from memory.
+        del yolo_model, img, nparr, image_bytes
         gc.collect()
         
         return jsonify({"ingredients": unique_objects})

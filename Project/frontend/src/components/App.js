@@ -20,14 +20,31 @@ function getCookie(name) {
   return null;
 }
 
-function ProtectedRouteWrapper({ children }) {
+function SemiProtectedRoute({ children }) {
+  // Allow access if the user has a JWT (logged in) OR a guest cookie.
   const jwt = getCookie("jwt");
-  return jwt ? children : <Navigate to="/login" />;
+  const isGuest = document.cookie.includes("guest=true");
+  if (!jwt && !isGuest) {
+    return <Navigate to="/login" />;
+  }
+  return children;
+}
+
+function FullProtectedRoute({ children }) {
+  // Only allow access for a full user (JWT present, no guest cookie).
+  const jwt = getCookie("jwt");
+  const isGuest = document.cookie.includes("guest=true");
+  if (!jwt || isGuest) {
+    return <Navigate to="/home" />;
+  }
+  return children;
 }
 
 function PublicRoute({ children }) {
+  // If a user is already logged in or is a guest, redirect to home.
   const jwt = getCookie("jwt");
-  return jwt ? <Navigate to="/home" /> : children;
+  const isGuest = document.cookie.includes("guest=true");
+  return jwt || isGuest ? <Navigate to="/home" /> : children;
 }
 
 function App() {
@@ -40,108 +57,103 @@ function App() {
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
       
-      {/* Protected Home route */}
+      {/* Routes accessible to both guests and logged-in users */}
       <Route
         path="/home"
         element={
-          <ProtectedRouteWrapper>
+          <SemiProtectedRoute>
             <div className="h-screen flex flex-col">
               <Navbar />
               <main className="flex-1">
                 <Home />
               </main>
             </div>
-          </ProtectedRouteWrapper>
+          </SemiProtectedRoute>
         }
       />
 
-      {/* Protected Cookbook route */}
-      <Route
-        path="/cookbook"
-        element={
-          <ProtectedRouteWrapper>
-            <div className="h-screen flex flex-col">
-              <Navbar />
-              <main className="flex-1">
-                <Cookbook />
-              </main>
-            </div>
-          </ProtectedRouteWrapper>
-        }
-      />
-
-      {/* Protected Profile route */}
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRouteWrapper>
-            <div className="h-screen flex flex-col">
-              <Navbar />
-              <main className="flex-1">
-                <Profile />
-              </main>
-            </div>
-          </ProtectedRouteWrapper>
-        }
-      />
-
-      {/* Protected Recipe Generation route */}
       <Route
         path="/recipe/generate"
         element={
-          <ProtectedRouteWrapper>
+          <SemiProtectedRoute>
             <div className="h-screen flex flex-col">
               <Navbar />
               <main className="flex-1">
                 <RecipeGeneration />
               </main>
             </div>
-          </ProtectedRouteWrapper>
+          </SemiProtectedRoute>
         }
       />
 
-      {/* Protected Ingredient Generation route */}
       <Route
         path="/ingredient/generate"
         element={
-          <ProtectedRouteWrapper>
+          <SemiProtectedRoute>
             <div className="h-screen flex flex-col">
               <Navbar />
               <main className="flex-1">
                 <IngredientGeneration />
               </main>
             </div>
-          </ProtectedRouteWrapper>
+          </SemiProtectedRoute>
         }
       />
 
-      {/* Protected Ingredient Details route */}
       <Route
         path="/ingredient"
         element={
-          <ProtectedRouteWrapper>
+          <SemiProtectedRoute>
             <div className="h-screen flex flex-col">
               <Navbar />
               <main className="flex-1">
                 <IngredientsDetails />
               </main>
             </div>
-          </ProtectedRouteWrapper>
+          </SemiProtectedRoute>
         }
       />
 
-      {/* Protected Recipe Details route */}
       <Route
         path="/recipe"
         element={
-          <ProtectedRouteWrapper>
+          <SemiProtectedRoute>
             <div className="h-screen flex flex-col">
               <Navbar />
               <main className="flex-1">
                 <RecipeDetails />
               </main>
             </div>
-          </ProtectedRouteWrapper>
+          </SemiProtectedRoute>
+        }
+      />
+
+      {/* Routes that require a full (non-guest) account */}
+      <Route
+        path="/cookbook"
+        element={
+          <FullProtectedRoute>
+            <div className="h-screen flex flex-col">
+              <Navbar />
+              <main className="flex-1">
+                <Cookbook />
+              </main>
+            </div>
+          </FullProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/profile"
+        element={
+          <FullProtectedRoute>
+            <div className="h-screen flex flex-col">
+              <Navbar />
+              <main className="flex-1">
+                <Profile />
+              </main>
+            </div>
+          </FullProtectedRoute>
         }
       />
 

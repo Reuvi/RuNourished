@@ -21,7 +21,8 @@ mongoose.connect(connectionString)
   });
 
 // Middleware
-app.use(express.json()); // Parses JSON request bodies
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(morgan("dev")); // Logs requests
 app.use(cors()); // Enables CORS
 

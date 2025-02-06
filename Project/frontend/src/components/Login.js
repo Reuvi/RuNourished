@@ -7,12 +7,11 @@ function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  // State for storing error messages
   const [errorMessage, setErrorMessage] = useState('');
 
-  // If the user is already logged in, redirect to home.
   useEffect(() => {
-    if (document.cookie.includes("jwt=")) {
+    // If the user is already logged in or is a guest, redirect to home.
+    if (document.cookie.includes("jwt=") || document.cookie.includes("guest=true")) {
       navigate("/home");
     }
   }, [navigate]);
@@ -20,35 +19,39 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      // Call the login API endpoint with the email and password
+      // Call your login API endpoint with the email and password
       const response = await api.post('/v1/users/login', { email, password });
       console.log(response.data.message);
-
-      // Clear any previous error message
       setErrorMessage('');
 
       // Set authentication cookies
       document.cookie = `jwt=${JSON.stringify(response.data.jwt)}; path=/; Secure; SameSite=Strict`;
       document.cookie = `values=${JSON.stringify(response.data.values)}; path=/; Secure; SameSite=Strict`;
-
-      // Navigate to the home page after a successful login
+      // Clear any guest cookie if present
+      document.cookie = "guest=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       navigate("/home");
     } catch (err) {
       console.error("Error logging in:", err);
-      // Set error message from API response or a default message
       setErrorMessage(err.response?.data?.error || "Login failed. Please try again.");
     }
   };
 
+  const handleGuestLogin = () => {
+    // Clear any existing auth cookies
+    document.cookie = "jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "values=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    // Set guest cookie
+    document.cookie = "guest=true; path=/; Secure; SameSite=Strict";
+    navigate("/home");
+  };
+
   return (
-    <div className="min-h-screen relative overflow-hidden bg-custom">
-      {/* Floating decorative orbs */}
+    <div className="h-screen relative overflow-hidden bg-custom">
       <div className="orb-large"></div>
       <div className="orb-small"></div>
 
-      <div className="relative flex items-center justify-center min-h-screen">
+      <div className="relative flex items-center justify-center h-screen">
         <div className="bg-white bg-opacity-20 backdrop-blur-lg p-8 rounded-lg shadow-xl w-96">
-          {/* Logo with light background */}
           <div className="flex justify-center mb-4">
             <img
               src="/images/logo_light_background.png"
@@ -57,7 +60,6 @@ function Login() {
             />
           </div>
 
-          {/* Error Banner */}
           {errorMessage && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               {errorMessage}
@@ -93,13 +95,21 @@ function Login() {
             >
               Sign In
             </button>
-            <div className="text-center text-sm text-deeperPurple">
-              Don't have an account?{' '}
-              <a href="/signup" className="text-darkerPurple hover:text-deeperPurple font-medium">
-                Sign up
-              </a>
-            </div>
           </form>
+          <div className="mt-4 text-center text-sm text-deeperPurple">
+            Don't have an account?{' '}
+            <a href="/signup" className="text-darkerPurple hover:text-deeperPurple font-medium">
+              Sign up
+            </a>
+          </div>
+          <div className="mt-4 text-center">
+            <button
+              onClick={handleGuestLogin}
+              className="w-full bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors duration-300"
+            >
+              Continue as Guest
+            </button>
+          </div>
         </div>
       </div>
     </div>

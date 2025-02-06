@@ -1,16 +1,19 @@
 import React, { useState } from "react";
-import { useLocation, Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import api from "../api/api";
 
 const RecipeDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const initialRecipe = location.state?.recipe;
-  // Get the flag to know if we came from the cookbook.
+  // Flag indicating whether the view came from the cookbook.
   const fromCookbook = location.state?.fromCookbook;
   const [currentRecipe, setCurrentRecipe] = useState(initialRecipe);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Check if the current user is a guest.
+  const isGuest = document.cookie.includes("guest=true");
 
   if (!currentRecipe) {
     return (
@@ -23,7 +26,7 @@ const RecipeDetails = () => {
     );
   }
 
-  // Helper to get cookie value.
+  // Helper to get a cookie value.
   function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -31,10 +34,7 @@ const RecipeDetails = () => {
     return null;
   }
 
-  // Removed handleRegenerate function since we no longer need it.
-  // const handleRegenerate = async () => { ... };
-
-  // Save recipe (only available if not already saved).
+  // Save recipe (only available to non-guests).
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -52,7 +52,7 @@ const RecipeDetails = () => {
     }
   };
 
-  // Safely process ingredients.
+  // Process ingredients safely.
   const ingredientsStr = currentRecipe.ingredients_list || "";
   let rawIngredients = [];
   try {
@@ -69,7 +69,7 @@ const RecipeDetails = () => {
     )
     .filter((item) => item !== "");
 
-  // Safely process instructions.
+  // Process instructions safely.
   const instructionsStr = currentRecipe.instructions || "";
   const rawInstructions = instructionsStr
     .split("\n")
@@ -178,8 +178,8 @@ const RecipeDetails = () => {
               Back to Generate Recipe
             </Link>
           )}
-          {/* Only show save button if NOT coming from the cookbook */}
-          {!fromCookbook && !currentRecipe.saved && (
+          {/* Only show the Save button if the recipe is not already saved and the user is not a guest */}
+          {!fromCookbook && !currentRecipe.saved && !isGuest && (
             <button
               onClick={handleSave}
               disabled={saving}
