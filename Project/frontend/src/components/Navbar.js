@@ -68,11 +68,6 @@ function Navbar() {
                 Cookbook
               </Link>
             )}
-            {!isGuest && (
-              <Link to="/profile" className="text-white hover:text-paleYellow transition">
-                Profile
-              </Link>
-            )}
             <Link to="/recipe/generate" className="text-white hover:text-paleYellow transition">
               Generate Recipe
             </Link>
