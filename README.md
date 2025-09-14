@@ -36,7 +36,7 @@ The hackathon was an intensive 24-hour experience that challenged our team to in
 
 ## Get Started
 
-Ready to revolutionize your culinary experience? Visit [RUNourished.co](https://RUNourished.co) to try out our AI-powered recipe generation and start cooking smarter today!
+Ready to revolutionize your culinary experience? Visit https://dorahacks.io/buidl/22352 to try out our AI-powered recipe generation and start cooking smarter today!
 
 ---
 
